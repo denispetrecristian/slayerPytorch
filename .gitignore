@@ -23,3 +23,13 @@ slayerCuda.cp39-win_amd64.pyd
 slayerLoihiCuda.cp39-win_amd64.pyd
 personal/network2
 personal/optimizer2
+personal\cifar-10-DVS\dataset\airplane
+personal\cifar-10-DVS\dataset\automobile
+personal\cifar-10-DVS\dataset\bird
+personal\cifar-10-DVS\dataset\cat
+personal\cifar-10-DVS\dataset\deer
+personal\cifar-10-DVS\dataset\dog
+personal\cifar-10-DVS\dataset\frog
+personal\cifar-10-DVS\dataset\horse
+personal\cifar-10-DVS\dataset\ship
+personal\cifar-10-DVS\dataset\truck
