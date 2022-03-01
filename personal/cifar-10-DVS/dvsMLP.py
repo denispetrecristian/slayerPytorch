@@ -6,9 +6,11 @@ import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader, Dataset
 from AedatLegacy import LegacyAedatFile
 import os
+from learningstats import learningStats
 import logging
+from datetime import datetime
 
-logging.basicConfig(filename='rccifar10.log',
+logging.basicConfig(filename='dvscifar10.log',
                     encoding='utf-8', level=logging.DEBUG)
 
 
@@ -23,6 +25,7 @@ NUM_EPOCHS = 30
 LEARNING_RATE = 0.01
 BATCH_SIZE = 1
 NUM_WORKERS = 0
+SCALE_OVERFIT = 100
 
 
 def parse_sample_name(sample: Str):
@@ -87,10 +90,10 @@ class Network(torch.nn.Module):
 def overfit_single_batch():
     # Load datasets
     dataset_train = Cifar10DVS(netParams['training']['path']['in'], netParams['training']
-                               ['path']['train'], netParams['neuron']['Ts'], netParams['neuron']['tSample'])
+                               ['path']['train'], netParams['simulation']['Ts'], netParams['simulation']['tSample'])
 
     dataset_test = Cifar10DVS(netParams['training']['path']['in'], netParams['training']
-                              ['path']['test'], netParams['neuron']['Ts'], netParams['neuron']['tSample'])
+                              ['path']['test'], netParams['simulation']['Ts'], netParams['simulation']['tSample'])
 
     loaded_train = DataLoader(
         dataset_train, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS, shuffle=False)
@@ -101,15 +104,32 @@ def overfit_single_batch():
     criterion = snn.loss(netParams).to(device)
     optimizer = torch.optim.Adam(model.parameters, lr=LEARNING_RATE)
 
+    stats = learningStats()
+
+    # Get single batch
+    (sample, label, desired) = next(iter(dataset_train))
+    sample = sample.to(device)
+    label = label.to(device)
+    desired = desired.to(device)
+
+    for epoch in NUM_EPOCHS * SCALE_OVERFIT:
+        output = model(sample)
+
+        loss = criterion.numSpikes(output, desired)
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        print(loss.item())
 
 
 
 def main():
     dataset_train = Cifar10DVS(netParams['training']['path']['in'], netParams['training']
-                               ['path']['train'], netParams['neuron']['Ts'], netParams['neuron']['tSample'])
+                               ['path']['train'], netParams['simulation']['Ts'], netParams['simulation']['tSample'])
 
     dataset_test = Cifar10DVS(netParams['training']['path']['in'], netParams['training']
-                              ['path']['test'], netParams['neuron']['Ts'], netParams['neuron']['tSample'])
+                              ['path']['test'], netParams['simulation']['Ts'], netParams['simulation']['tSample'])
 
     loaded_train = DataLoader(
         dataset_train, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS, shuffle=False)
@@ -120,9 +140,50 @@ def main():
     criterion = snn.loss(netParams).to(device)
     optimizer = torch.optim.Adam(model.parameters, lr=LEARNING_RATE)
 
+    stats = learningStats()
+
     for epoch in NUM_EPOCHS:
-        pass
+        tSt = datetime.now()
+        for i, (sample, label, desired) in enumerate(dataset_train):
+            sample = sample.to(device)
+            label = label.to(device)
+            desired = desired.to(device)
+
+            output = model(sample)
+
+            stats.training.correctSamples += torch.sum(
+                snn.predict.getClass(output) == label).data.item()
+            stats.training.numSamples += len(label)
+
+            loss = criterion.numSpikes(output, desired)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            stats.training.lossSum += loss.cpu().data.item()
+
+            if i % 10 == 0:
+                stats.print(epoch, i, (datetime.now() - tSt).total_seconds())
+
+        for i, (sample, label, desired) in enumerate(dataset_test):
+            sample = sample.to(device)
+            label = label.to(device)
+            desired = desired.to(device)
+
+            output = model(sample)
+
+            stats.testing.correctSamples += torch.sum(
+                snn.predict.getClass(output) == label).data.item()
+            stats.testing.numSamples += len(label)
+
+            loss = criterion.numSpikes(output, desired)
+
+            stats.testing.lossSum += loss.cpu().data.item()
+            if i % 10 == 0:
+                stats.print(epoch, i)
+
+        stats.update()
 
 
 if __name__ == "__main__":
-    main()
+    overfit_single_batch()
