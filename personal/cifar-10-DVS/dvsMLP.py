@@ -32,8 +32,10 @@ def parse_sample_name(sample: Str):
     '''
         Function used to get the class of the sample
     '''
+    print(type(sample))
+    print(type(categories[0]))
     for i in range(len(categories)):
-        if categories[i] in sample:
+        if str(categories[i]) in sample:
             return i
 
     raise Exception(
@@ -43,7 +45,7 @@ def parse_sample_name(sample: Str):
 class Cifar10DVS(Dataset):
     def __init__(self, datasetPath, samplePath, samplingTime, sampleLentgh):
         self.path = datasetPath
-        self.samples = np.loadtxt(samplePath)
+        self.samples = np.genfromtxt(samplePath, dtype=str)
         self.samplingTime = samplingTime
         self.nTimeBins = int(sampleLentgh / samplingTime)
 
@@ -59,14 +61,23 @@ class Cifar10DVS(Dataset):
         desired = torch.empty([10, 1, 1, 1])
         desired[category, ...] = 1
 
+        sample_index = "dataset/" + sample_index
+        print(sample_index)
+
         with LegacyAedatFile(sample_index) as f:
+            # print(len(iter(f)))
             for event in f:
-                x = np.insert(x, event.x)
-                y = np.insert(y, event.y)
-                p = np.insert(p, event.polarity)
-                t = np.insert(t, event.timestamp)
+                x = np.append(x, event.x)
+                y = np.append(y, event.y)
+                p = np.append(p, event.polarity)
+                t = np.append(t, event.timestamp / 1000)
 
             logging.debug("Read the sample")
+
+        print(p.size)
+        print(x.size)
+        print(y.size)
+        print(t.size)
 
         return snn.io.event(x, y, p, t).toSpikeTensor(torch.empty([p.size, x.size, y.size, t.size])), category, desired
 
@@ -76,6 +87,7 @@ class Cifar10DVS(Dataset):
 
 class Network(torch.nn.Module):
     def __init__(self, netParams):
+        super(Network,self).__init__()
         self.slayer = snn.layer(netParams['neuron'], netParams['simulation'])
         self.fc1 = self.slayer.dense((128, 128), 240)
         self.fc2 = self.slayer.dense(240, 10)
@@ -100,14 +112,17 @@ def overfit_single_batch():
     loaded_test = DataLoader(
         dataset_test, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS, shuffle=False)
 
+    print(len(dataset_test))
+    print(len(dataset_train))
+
     model = Network(netParams).to(device)
     criterion = snn.loss(netParams).to(device)
-    optimizer = torch.optim.Adam(model.parameters, lr=LEARNING_RATE)
+    optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
     stats = learningStats()
 
     # Get single batch
-    (sample, label, desired) = next(iter(dataset_train))
+    (sample, label, desired) = next(iter(loaded_train))
     sample = sample.to(device)
     label = label.to(device)
     desired = desired.to(device)
@@ -144,7 +159,7 @@ def main():
 
     for epoch in NUM_EPOCHS:
         tSt = datetime.now()
-        for i, (sample, label, desired) in enumerate(dataset_train):
+        for i, (sample, label, desired) in enumerate(loaded_train):
             sample = sample.to(device)
             label = label.to(device)
             desired = desired.to(device)
@@ -165,7 +180,7 @@ def main():
             if i % 10 == 0:
                 stats.print(epoch, i, (datetime.now() - tSt).total_seconds())
 
-        for i, (sample, label, desired) in enumerate(dataset_test):
+        for i, (sample, label, desired) in enumerate(loaded_test):
             sample = sample.to(device)
             label = label.to(device)
             desired = desired.to(device)

@@ -1,16 +1,19 @@
+from attr import validate
 import slayerSNN as snn
 import numpy as np
 from slayerSNN import slayer
 import torch
 from torchvision.datasets import CIFAR10
 import torchvision
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, random_split
 from encoding import Encoding
 from learningstats import learningStats
 import torchvision.models as models
 from datetime import date, datetime
 from torch.profiler import profile, record_function, ProfilerActivity
 import logging
+
+
 logging.basicConfig(filename='rccifar10.log',
                     encoding='utf-8', level=logging.DEBUG)
 
@@ -21,6 +24,8 @@ device = torch.device("cuda")
 num_epochs = 10
 pixel_to_time_index = {}
 load = False
+
+BATCH_SIZE = 8
 
 transformation = torchvision.transforms.Compose(
     [torchvision.transforms.ToTensor(), lambda x: x*255])
@@ -67,15 +72,8 @@ class Network(torch.nn.Module):
         if int(torch.sum(spikes)) != int(torch.sum(input)):
             raise Exception("Error in conversion")
 
-        # print(torch.sum(spikes))
-        # print(spikes.shape)
-        # spikes = self.slayer.spike(self.pspLayer(spikes))
-        # print(torch.sum(spikes))
         layer1 = self.slayer.spike(self.slayer.psp(self.fc1(spikes)))
         layer2 = self.slayer.spike(self.slayer.psp(self.fc2(layer1)))
-        # layer3 = self.slayer.spike(self.slayer.psp(self.fc3(layer2)))
-        # layer1 = self.slayer.spike(self.fc1(self.slayer.psp(spikes)))
-        # layer2 = self.slayer.spike(self.fc2(self.slayer.psp(layer1)))
 
         return layer2
 
@@ -103,7 +101,9 @@ def overfit_single_batch():
     if load == True:
         network.load_state_dict(torch.load("network1"))
 
-    optimizer = torch.optim.Adam(network.parameters(), lr=0.001, amsgrad=True)
+    optimizer = torch.optim.Adam(
+        network.parameters(), amsgrad=True, lr=1e-3, weight_decay=1e-4)
+    # optimizer = torch.optim.Adagrad(network.parameters(), lr=0.01)
 
     if load == True:
         optimizer.load_state_dict(torch.load("optimizer1"))
@@ -114,21 +114,12 @@ def overfit_single_batch():
     sample = sample.to(device)
     label = label.to(device)
 
-    desired = torch.zeros((10, 1, 1, 1))
+    desired = torch.zeros((10, 1, 1, 1)).to(device)
     desired[label, ...] = 1
 
-    for i in range(50):
-        print("______________________")
-        print("EPOCH: " + str(i))
-        output = network.forward(sample)
-        print("For the first layer of the SNN")
-        print(torch.sum(network.fc1.weight > 0))
-        print(torch.sum(network.fc1.weight))
+    for i in range(5000):
 
-        print("For the second layer of the SNN")
-        print(torch.sum(network.fc2.weight))
-        print("For the third layer of the SNN")
-        print(torch.sum(network.fc3.weight))
+        output = network.forward(sample)
         loss = criterion.numSpikes(output, desired)
 
         optimizer.zero_grad()
@@ -139,23 +130,96 @@ def overfit_single_batch():
         print("______________________")
 
         # print("The number of times the correct neuron fired: " + str(int(torch.sum(output[0][label][0][0]))))
-        for i in range(10):
-            print(
-                f"The number of times neuron  {i} fired: " + str(int(torch.sum(output[0][i][0][0]))))
+        fire = torch.sum(output[..., 0:2550], 4, keepdim=True)
+        for j in range(10):
+            print(f"The neuron {j} fired " + str(int(fire[0][j][0][0])))
 
         print("______________________")
 
 
+# overfit_single_batch()
 
-if __name__ == "__main__":
+def validate_hyperparameters():
+    dataset_cifar10 = CIFAR10(root="", download=False,
+                              transform=transformation, train=True)
+    dataset_train, dataset_validation = random_split(
+        dataset_cifar10, [10000, 40000])
+
+    loaded_train = DataLoader(
+        dataset_train, batch_size=1, num_workers=0, shuffle=False)
+    loaded_validation = DataLoader(
+        dataset_validation, batch_size=1, num_workers=0, shuffle=False)
+
+    calculate_spike_times()
+
+    network = Network().to(device)
+    criterion = snn.loss(netParams).to(device)
+    optimizer = torch.optim.Adam(
+        network.parameters(), lr=1e-4 * 5, weight_decay=1e-5, amsgrad=True)
+
+    stats = learningStats()
+
+    for epoch in range(num_epochs):
+        tSt = datetime.now()
+        network.train()
+
+        for i, (sample, label) in enumerate(loaded_train):
+            sample = sample.to(device)
+
+            desired = torch.zeros((10, 1, 1, 1)).to(device)
+            desired[label, ...] = 1
+
+            output = network(sample).to(device)
+
+            stats.training.correctSamples += torch.sum(
+                snn.predict.getClass(output) == label).data.item()
+            stats.training.numSamples += len(label)
+
+            loss = criterion.numSpikes(output, desired)
+
+            optimizer.zero_grad()
+
+            loss.backward()
+
+            optimizer.step()
+
+            stats.training.lossSum += loss.cpu().data.item()
+
+            if i % 10 == 0:
+                stats.print(epoch, i, (datetime.now() - tSt).total_seconds())
+
+        network.eval()
+
+        with torch.no_grad():
+            for i, (sample, label) in enumerate(loaded_validation):
+                sample = sample.to(device)
+                label = label.to(device)
+                desired = torch.zeros((10, 1, 1, 1))
+                desired[label, ...] = 1
+
+                output = network(sample)
+
+                loss = criterion.numSpikes(output, desired)
+
+                stats.testing.lossSum += loss.cpu().data.item()
+                if i % 10 == 0:
+                    stats.print(epoch, i)
+
+        stats.update()
+
+
+validate_hyperparameters()
+
+
+if __name__ == "__main3__":
     dataset_train = CIFAR10(root="", download=False,
                             transform=transformation, train=True)
     dataset_test = CIFAR10(root="", download=False,
                            transform=transformation, train=False)
 
     loaded_train = DataLoader(
-        dataset_train, batch_size=1, num_workers=0, shuffle=False)
-    loaded_test = DataLoader(dataset_test, batch_size=1,
+        dataset_train, batch_size=BATCH_SIZE, num_workers=0, shuffle=False)
+    loaded_test = DataLoader(dataset_test, batch_size=BATCH_SIZE,
                              num_workers=0, shuffle=False)
 
     logging.info("Finish loading data")
@@ -170,7 +234,8 @@ if __name__ == "__main__":
     if load == True:
         network.load_state_dict(torch.load("network1"))
 
-    optimizer = torch.optim.Adam(network.parameters(), lr=0.001, amsgrad=True)
+    optimizer = torch.optim.Adam(
+        network.parameters(), lr=1e-4, amsgrad=True, weight_decay=1e-5)
 
     if load == True:
         optimizer.load_state_dict(torch.load("optimizer1"))
@@ -184,7 +249,8 @@ if __name__ == "__main__":
             sample.to(device)
             label.to(device)
             desired = torch.zeros((10, 1, 1, 1))
-            desired[int(label), ...] = 1
+            for b in range(BATCH_SIZE):
+                desired[int(label[b]), ...] = 1
             desired = desired.to(device)
 
             output = network(sample)
