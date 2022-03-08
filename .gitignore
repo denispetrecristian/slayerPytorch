@@ -33,3 +33,5 @@ personal/cifar-10-DVS/dataset/frog
 personal/cifar-10-DVS/dataset/horse
 personal/cifar-10-DVS/dataset/ship
 personal/cifar-10-DVS/dataset/truck
+personal/rccifar10.log
+personal/cifar-10-DVS/dvscifar10.log

@@ -15,8 +15,7 @@ from torch.profiler import profile, record_function, ProfilerActivity
 import logging
 
 
-logging.basicConfig(filename='rccifar10.log',
-                    encoding='utf-8', level=logging.DEBUG)
+logging.basicConfig(filename='rccifar10.log', level=logging.DEBUG)
 
 
 netParams = snn.params("network.yaml")
@@ -69,12 +68,12 @@ class Network(torch.nn.Module):
     def __init__(self):
         super(Network, self).__init__()
         self.slayer = snn.layer(netParams['neuron'], netParams['simulation'])
-        self.fc1 = self.slayer.dense((32, 32, 3), 240)
-        self.fc2 = self.slayer.dense(240, 10)
-        
+        self.fc1 = self.slayer.dense((32, 32, 3), 410)
+        self.fc2 = self.slayer.dense(410, 10)
+
         # Initialize layers
-        torch.nn.init.uniform(self.fc1.weight, 0, 1/3)
-        torch.nn.init.uniform(self.fc2.weight, 0, 1/3)
+        torch.nn.init.uniform(self.fc1.weight, 0, 1/300)
+        torch.nn.init.uniform(self.fc2.weight, 0, 1/300)
 
         self.nTimeBins = int(
             netParams['simulation']['tSample'] / netParams['simulation']['Ts'])
@@ -231,8 +230,10 @@ def validate_hyperparameters():
                 res2 = network.slayer.psp(network.fc2(res))
 
                 for i in range(10):
-                    avg = float(torch.sum(res2[0][i][0][0])) / float(torch.numel(res2[0][i][0][0]))
-                    logging.debug(f"The average membrane potential for neuron {i} is {avg}")
+                    avg = float(torch.sum(res2[0][i][0][0])) / \
+                        float(torch.numel(res2[0][i][0][0]))
+                    logging.debug(
+                        f"The average membrane potential for neuron {i} is {avg}")
 
         network.eval()
 
@@ -254,18 +255,18 @@ def validate_hyperparameters():
         stats.update()
 
 
-validate_hyperparameters()
+# validate_hyperparameters()
 
 
-if __name__ == "__main3__":
+if __name__ == "__main__":
     dataset_train = CIFAR10(root="", download=False,
                             transform=transformation, train=True)
     dataset_test = CIFAR10(root="", download=False,
                            transform=transformation, train=False)
 
     loaded_train = DataLoader(
-        dataset_train, batch_size=BATCH_SIZE, num_workers=0, shuffle=False)
-    loaded_test = DataLoader(dataset_test, batch_size=BATCH_SIZE,
+        dataset_train, batch_size=1, num_workers=0, shuffle=False)
+    loaded_test = DataLoader(dataset_test, batch_size=1,
                              num_workers=0, shuffle=False)
 
     logging.info("Finish loading data")
@@ -281,7 +282,7 @@ if __name__ == "__main3__":
         network.load_state_dict(torch.load("network1"))
 
     optimizer = torch.optim.Adam(
-        network.parameters(), lr=0.01, amsgrad=True, weight_decay=0.001)
+        network.parameters(), lr=4e-4, amsgrad=True, weight_decay=0.08)
 
     if load == True:
         optimizer.load_state_dict(torch.load("optimizer1"))
@@ -290,14 +291,13 @@ if __name__ == "__main3__":
 
     for epoch in range(num_epochs):
         time_start = datetime.now()
+        network.train()
 
         for i, (sample, label) in enumerate(loaded_train):
             sample.to(device)
-            label.to(device)
+
             desired = torch.zeros((10, 1, 1, 1))
-            for b in range(BATCH_SIZE):
-                desired[int(label[b]), ...] = 1
-            desired = desired.to(device)
+            desired[label, ...] = 1
 
             output = network(sample)
 
@@ -313,15 +313,18 @@ if __name__ == "__main3__":
 
             optimizer.step()
 
-            if i % 50:
-                logging.debug("The sum of weight in layer 1" +
-                              str(int(torch.sum(network.fc1.weight))))
-                logging.debug("The sum of weight in layer 2" +
-                              str(int(torch.sum(network.fc2.weight))))
-                for j in range(10):
+            if i % 500 == 0:
+                spikes = image_to_spike_tensor(sample, torch.zeros(
+                    (1, 3, 32, 32, network.nTimeBins)), 1)
+                res = network.slayer.spike(
+                    network.slayer.psp(network.fc1(spikes)))
+                res2 = network.slayer.psp(network.fc2(res))
+
+                for i in range(10):
+                    avg = float(torch.sum(res2[0][i][0][0])) / \
+                        float(torch.numel(res2[0][i][0][0]))
                     logging.debug(
-                        f"The number of times neuron {j} fired" + str(int(torch.sum(output[0][j][0][0]))))
-                logging.debug("The label for the class is: " + str(int(label)))
+                        f"The average membrane potential for neuron {i} is {avg}")
 
             stats.training.lossSum += loss.cpu().data.item()
 
@@ -331,19 +334,22 @@ if __name__ == "__main3__":
 
         torch.save(network.state_dict(), "network" + epoch)
         torch.save(optimizer.state_dict(), "optimizer" + epoch)
+
         logging.info("Starting the testing")
 
-        for i, (input, label) in enumerate(loaded_test, 0):
-            input = input.to(device)
-            # target = label.to(device)
+        network.eval()
 
-            output = network.forward(input)
+        with torch.no_grad:
+            for i, (input, label) in enumerate(loaded_test, 0):
+                input = input.to(device)
 
-            stats.testing.correctSamples += torch.sum(
-                snn.predict.getClass(output) == label).data.item()
-            stats.testing.numSamples += len(label)
+                output = network.forward(input)
 
-            loss = criterion.numSpikes(output, label)
-            stats.testing.lossSum += loss.cpu().data.item()
-            if i % 100 == 0:
-                stats.print(epoch, i)
+                stats.testing.correctSamples += torch.sum(
+                    snn.predict.getClass(output) == label).data.item()
+                stats.testing.numSamples += len(label)
+
+                loss = criterion.numSpikes(output, label)
+                stats.testing.lossSum += loss.cpu().data.item()
+                if i % 100 == 0:
+                    stats.print(epoch, i)
