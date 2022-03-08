@@ -52,6 +52,16 @@ def image_to_spike_tensor(input: torch.Tensor, empty_array: torch.Tensor, Ts: in
     return empty_array.to(device)
 
 
+def log_sample_properties(sample: torch.Tensor):
+    for B in range(sample.shape[0]):
+        i = 0
+        for C in range(sample.shape[1]):
+            for H in range(sample.shape[2]):
+                for W in range(sample.shape[3]):
+                    logging.debug(f"For the {i} neuron there are {torch.sum(sample[B][C][H][W])} spikes")
+                    i += 1
+
+
 class Network(torch.nn.Module):
 
     def __init__(self):
@@ -142,8 +152,8 @@ def overfit_single_batch():
 def validate_hyperparameters():
     dataset_cifar10 = CIFAR10(root="", download=False,
                               transform=transformation, train=True)
-    dataset_train, dataset_validation = random_split(
-        dataset_cifar10, [10000, 40000])
+    dataset_train, dataset_validation, dump_dataset = random_split(
+        dataset_cifar10, [10000, 10000, 30000])
 
     loaded_train = DataLoader(
         dataset_train, batch_size=1, num_workers=0, shuffle=False)
@@ -155,7 +165,7 @@ def validate_hyperparameters():
     network = Network().to(device)
     criterion = snn.loss(netParams).to(device)
     optimizer = torch.optim.Adam(
-        network.parameters(), lr=1e-4 * 5, weight_decay=1e-5, amsgrad=True)
+        network.parameters(), lr=0.1, weight_decay=0.01, amsgrad=True)
 
     stats = learningStats()
 
@@ -187,6 +197,23 @@ def validate_hyperparameters():
 
             if i % 10 == 0:
                 stats.print(epoch, i, (datetime.now() - tSt).total_seconds())
+                print("Current loss is : " + str(loss.item()))
+            
+            # if i % 50 == 0:
+            #     log_sample_properties(sample)
+
+            if i % 100 == 0:
+                fire = torch.sum(output[..., :], 4, keepdim=True)
+                logging.debug(f"The label of the sample is: {int(label)}")
+                for j in range(10):
+                    logging.debug(
+                        f"The neuron {j} fired " + str(int(fire[0][j][0][0])))
+                logging.debug("The weights in the first layer")
+                logging.debug(
+                    float(torch.sum(network.fc1.weight) / torch.numel(network.fc2.weight)))
+                logging.debug("The weights in the second layer")
+                logging.debug(
+                    float(torch.sum(network.fc2.weight) / torch.numel(network.fc1.weight)))
 
         network.eval()
 
