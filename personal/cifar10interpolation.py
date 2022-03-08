@@ -1,3 +1,4 @@
+from cmath import sqrt
 from attr import validate
 import slayerSNN as snn
 import numpy as np
@@ -70,7 +71,11 @@ class Network(torch.nn.Module):
         self.slayer = snn.layer(netParams['neuron'], netParams['simulation'])
         self.fc1 = self.slayer.dense((32, 32, 3), 240)
         self.fc2 = self.slayer.dense(240, 10)
-        # self.fc3 = self.slayer.dense(80, 10)
+        
+        # Initialize layers
+        torch.nn.init.uniform(self.fc1.weight, 0, 1/3)
+        torch.nn.init.uniform(self.fc2.weight, 0, 1/3)
+
         self.nTimeBins = int(
             netParams['simulation']['tSample'] / netParams['simulation']['Ts'])
         self.timeStep = int(netParams['simulation']['Ts'])
@@ -166,9 +171,11 @@ def validate_hyperparameters():
     network = Network().to(device)
     criterion = snn.loss(netParams).to(device)
     optimizer = torch.optim.Adam(
-        network.parameters(), lr=0.001, weight_decay=0.05, amsgrad=True)
+        network.parameters(), lr=1e-3, weight_decay=0.3, amsgrad=True)
 
     stats = learningStats()
+
+    logging_time = 20
 
     for epoch in range(num_epochs):
         tSt = datetime.now()
@@ -196,32 +203,36 @@ def validate_hyperparameters():
 
             stats.training.lossSum += loss.cpu().data.item()
 
-            if i % 40 == 0:
+            if i % logging_time == 0:
                 stats.print(epoch, i, (datetime.now() - tSt).total_seconds())
                 print("Current loss is : " + str(loss.item()))
 
             # if i % 50 == 0:
             #     log_sample_properties(sample)
 
-            if i % 50 == 0:
-                spikes = image_to_spike_tensor(sample, torch.zeros(
-                    (1, 3, 32, 32, network.nTimeBins)), 1)
-                res = network.slayer.spike(
-                    network.slayer.psp(network.fc1(spikes)))
-                logging.debug(network.slayer.psp(network.fc2(res)))
-
-            if i % 40 == 0:
+            if i % logging_time == 0:
                 fire = torch.sum(output[..., :], 4, keepdim=True)
                 logging.debug(f"The label of the sample is: {int(label)}")
                 for j in range(10):
                     logging.debug(
                         f"The neuron {j} fired " + str(int(fire[0][j][0][0])))
-                logging.debug("The weights in the first layer")
+                logging.debug("The average of the weights in the first layer")
                 logging.debug(
                     float(torch.sum(network.fc1.weight) / torch.numel(network.fc2.weight)))
-                logging.debug("The weights in the second layer")
+                logging.debug("The average of the weights in the second layer")
                 logging.debug(
                     float(torch.sum(network.fc2.weight) / torch.numel(network.fc1.weight)))
+
+            if i % logging_time == 0:
+                spikes = image_to_spike_tensor(sample, torch.zeros(
+                    (1, 3, 32, 32, network.nTimeBins)), 1)
+                res = network.slayer.spike(
+                    network.slayer.psp(network.fc1(spikes)))
+                res2 = network.slayer.psp(network.fc2(res))
+
+                for i in range(10):
+                    avg = float(torch.sum(res2[0][i][0][0])) / float(torch.numel(res2[0][i][0][0]))
+                    logging.debug(f"The average membrane potential for neuron {i} is {avg}")
 
         network.eval()
 
