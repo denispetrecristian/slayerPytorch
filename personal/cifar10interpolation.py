@@ -58,7 +58,8 @@ def log_sample_properties(sample: torch.Tensor):
         for C in range(sample.shape[1]):
             for H in range(sample.shape[2]):
                 for W in range(sample.shape[3]):
-                    logging.debug(f"For the {i} neuron there are {torch.sum(sample[B][C][H][W])} spikes")
+                    logging.debug(
+                        f"For the {i} neuron there are {torch.sum(sample[B][C][H][W])} spikes")
                     i += 1
 
 
@@ -165,7 +166,7 @@ def validate_hyperparameters():
     network = Network().to(device)
     criterion = snn.loss(netParams).to(device)
     optimizer = torch.optim.Adam(
-        network.parameters(), lr=0.1, weight_decay=0.01, amsgrad=True)
+        network.parameters(), lr=0.001, weight_decay=0.05, amsgrad=True)
 
     stats = learningStats()
 
@@ -195,14 +196,21 @@ def validate_hyperparameters():
 
             stats.training.lossSum += loss.cpu().data.item()
 
-            if i % 10 == 0:
+            if i % 40 == 0:
                 stats.print(epoch, i, (datetime.now() - tSt).total_seconds())
                 print("Current loss is : " + str(loss.item()))
-            
+
             # if i % 50 == 0:
             #     log_sample_properties(sample)
 
-            if i % 100 == 0:
+            if i % 50 == 0:
+                spikes = image_to_spike_tensor(sample, torch.zeros(
+                    (1, 3, 32, 32, network.nTimeBins)), 1)
+                res = network.slayer.spike(
+                    network.slayer.psp(network.fc1(spikes)))
+                logging.debug(network.slayer.psp(network.fc2(res)))
+
+            if i % 40 == 0:
                 fire = torch.sum(output[..., :], 4, keepdim=True)
                 logging.debug(f"The label of the sample is: {int(label)}")
                 for j in range(10):
@@ -262,7 +270,7 @@ if __name__ == "__main3__":
         network.load_state_dict(torch.load("network1"))
 
     optimizer = torch.optim.Adam(
-        network.parameters(), lr=1e-4, amsgrad=True, weight_decay=1e-5)
+        network.parameters(), lr=0.01, amsgrad=True, weight_decay=0.001)
 
     if load == True:
         optimizer.load_state_dict(torch.load("optimizer1"))
