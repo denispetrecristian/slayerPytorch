@@ -1,6 +1,6 @@
 simulation:
     Ts: 1.0
-    tSample: 2000
+    tSample: 2550
     nSample: 1
 neuron:
     type:     SRMALPHA
@@ -14,11 +14,8 @@ training:
     error:
         # type: NumSpikes #ProbSpikes #NumSpikes
         type: NumSpikes
-        tgtSpikeRegion: {start: 0, stop: 2000}
+        tgtSpikeRegion: {start: 0, stop: 2550}
         tgtSpikeCount: {true: 60, false: 10}
-        # probSlidingWin: 20  # only valid for ProbSpikes
-        # tgtSpikeRegion: {start: 0, stop: 300}    # only valid for NumSpikes and ProbSpikes
-        # tgtSpikeCount: {true: 60, false: 10}    # only valid for NumSpikes
     path:
         in: dataset/
         train: dataset/train9000.txt

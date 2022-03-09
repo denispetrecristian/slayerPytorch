@@ -282,7 +282,7 @@ if __name__ == "__main__":
         network.load_state_dict(torch.load("network1"))
 
     optimizer = torch.optim.Adam(
-        network.parameters(), lr=4e-4, amsgrad=True, weight_decay=0.08)
+        network.parameters(), lr=8e-4, amsgrad=True, weight_decay=0.25)
 
     if load == True:
         optimizer.load_state_dict(torch.load("optimizer1"))
@@ -307,26 +307,40 @@ if __name__ == "__main__":
                 snn.predict.getClass(output) == label).data.item()
             stats.training.numSamples += len(label)
 
-            optimizer.zero_grad()
-
-            loss.backward()
-
-            optimizer.step()
-
             if i % 500 == 0:
+                logging.debug("____________________________________")
+                logging.debug(f"The desired class is {int(label)} ")
                 spikes = image_to_spike_tensor(sample, torch.zeros(
                     (1, 3, 32, 32, network.nTimeBins)), 1)
                 res = network.slayer.spike(
                     network.slayer.psp(network.fc1(spikes)))
                 res2 = network.slayer.psp(network.fc2(res))
+                res2_spikes = network.slayer.spike(res2)
 
-                for i in range(10):
-                    avg = float(torch.sum(res2[0][i][0][0])) / \
-                        float(torch.numel(res2[0][i][0][0]))
+                for j in range(network.fc1.weight.shape[0]):
                     logging.debug(
-                        f"The average membrane potential for neuron {i} is {avg}")
+                        f"The number of times neuron {j} fired from the 1st layer is {torch.sum(res[0][j][0][0])}")
+
+                for j in range(10):
+                    avg = float(torch.sum(res2[0][j][0][0])) / \
+                        float(torch.numel(res2[0][j][0][0]))
+                    logging.debug(
+                        f"The average membrane potential for neuron {j} in 2nd layer is {avg}")
+
+                logging.debug("____________________________________")
+                for j in range(10):
+                    logging.debug(
+                        f"The number of times neuron {j} fired from the 1st layer is {torch.sum(res2_spikes[0][j][0][0])}")
+
+                logging.debug("____________________________________")
 
             stats.training.lossSum += loss.cpu().data.item()
+
+            optimizer.zero_grad()
+
+            loss.backward()
+
+            optimizer.step()
 
             if i % 100 == 0:
                 stats.print(epoch, i, (datetime.now() -
