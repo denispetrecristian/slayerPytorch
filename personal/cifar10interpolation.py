@@ -312,14 +312,20 @@ if __name__ == "__main__":
                 logging.debug(f"The desired class is {int(label)} ")
                 spikes = image_to_spike_tensor(sample, torch.zeros(
                     (1, 3, 32, 32, network.nTimeBins)), 1)
-                res = network.slayer.spike(
-                    network.slayer.psp(network.fc1(spikes)))
+                res_psp = network.slayer.psp(network.fc1(spikes))
+                res = network.slayer.spike(res_psp)
                 res2 = network.slayer.psp(network.fc2(res))
                 res2_spikes = network.slayer.spike(res2)
 
                 for j in range(network.fc1.weight.shape[0]):
                     logging.debug(
                         f"The number of times neuron {j} fired from the 1st layer is {torch.sum(res[0][j][0][0])}")
+                    avg = float(
+                        torch.sum(res_psp[0][j][0][0])) / float(torch.numel(res_psp[0][j][0][0]))
+                    logging.debug(
+                        f"The average membrane potential for neuron {j} from the 1st layer is {avg}")
+                
+                logging.debug("____________________________________")
 
                 for j in range(10):
                     avg = float(torch.sum(res2[0][j][0][0])) / \
