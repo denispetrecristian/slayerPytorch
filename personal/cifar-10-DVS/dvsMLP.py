@@ -22,18 +22,16 @@ netParams = snn.params("network.yaml")
 device = torch.device("cuda")
 
 NUM_EPOCHS = 30
-LEARNING_RATE = 0.01
+LEARNING_RATE = 0.001
 BATCH_SIZE = 1
 NUM_WORKERS = 0
-SCALE_OVERFIT = 100
+SCALE_OVERFIT = 1
 
 
 def parse_sample_name(sample: Str):
     '''
         Function used to get the class of the sample
     '''
-    print(type(sample))
-    print(type(categories[0]))
     for i in range(len(categories)):
         if str(categories[i]) in sample:
             return i
@@ -53,33 +51,30 @@ class Cifar10DVS(Dataset):
         sample_index = self.samples[index]
         category = torch.tensor(parse_sample_name(sample_index))
 
-        x = np.array([])
-        y = np.array([])
-        p = np.array([])
-        t = np.array([])
+        x = []
+        y = []
+        p = []
+        t = []
 
         desired = torch.empty([10, 1, 1, 1])
         desired[category, ...] = 1
 
         sample_index = "dataset/" + sample_index
-        print(sample_index)
 
         with LegacyAedatFile(sample_index) as f:
             # print(len(iter(f)))
             for event in f:
-                x = np.append(x, event.x)
-                y = np.append(y, event.y)
-                p = np.append(p, event.polarity)
-                t = np.append(t, event.timestamp / 1000)
+                x.append(event.x)
+                y.append(event.y)
+                p.append(event.polarity)
+                t.append(int(event.timestamp/1000))
 
-            logging.debug("Read the sample")
+        x = np.array(x)
+        y = np.array(y)
+        p = np.array(p)
+        t = np.array(t)
 
-        print(p.size)
-        print(x.size)
-        print(y.size)
-        print(t.size)
-
-        return snn.io.event(x, y, p, t).toSpikeTensor(torch.empty([p.size, x.size, y.size, t.size])), category, desired
+        return snn.io.event(x, y, p, t).toSpikeTensor(torch.empty((1, 128, 128, 1400))), category, desired
 
     def __len__(self):
         return len(self.samples)
@@ -87,16 +82,21 @@ class Cifar10DVS(Dataset):
 
 class Network(torch.nn.Module):
     def __init__(self, netParams):
-        super(Network,self).__init__()
+        super(Network, self).__init__()
         self.slayer = snn.layer(netParams['neuron'], netParams['simulation'])
-        self.fc1 = self.slayer.dense((128, 128), 240)
-        self.fc2 = self.slayer.dense(240, 10)
+        self.fc1 = self.slayer.dense((128, 128), 410)
+        self.fc2 = self.slayer.dense(410, 240)
+        self.fc3 = self.slayer.dense(240, 10)
+
+        # torch.nn.init.uniform(self.fc1.weight, 0, 1/30)
+        # torch.nn.init.uniform(self.fc2.weight, 0, 1/30)
 
     def forward(self, input):
         layer1 = self.slayer.spike(self.slayer.psp(self.fc1(input)))
         layer2 = self.slayer.spike(self.slayer.psp(self.fc2(layer1)))
+        layer3 = self.slayer.spike(self.slayer.psp(self.fc3(layer2)))
 
-        return layer2
+        return layer3
 
 
 def overfit_single_batch():
@@ -125,10 +125,15 @@ def overfit_single_batch():
     (sample, label, desired) = next(iter(loaded_train))
     sample = sample.to(device)
     label = label.to(device)
+    print(label)
     desired = desired.to(device)
 
-    for epoch in NUM_EPOCHS * SCALE_OVERFIT:
+    for epoch in range(NUM_EPOCHS * SCALE_OVERFIT):
         output = model(sample)
+
+        for j in range(10):
+            print(
+                f"The number of times neuron {j} fired is {torch.sum(output[0][j][0][0])}")
 
         loss = criterion.numSpikes(output, desired)
         optimizer.zero_grad()
@@ -136,7 +141,6 @@ def overfit_single_batch():
         optimizer.step()
 
         print(loss.item())
-
 
 
 def main():
@@ -153,18 +157,34 @@ def main():
 
     model = Network(netParams).to(device)
     criterion = snn.loss(netParams).to(device)
-    optimizer = torch.optim.Adam(model.parameters, lr=LEARNING_RATE)
+    optimizer = torch.optim.Adam(
+        model.parameters(), lr=LEARNING_RATE, weight_decay=0.03)
 
     stats = learningStats()
 
-    for epoch in NUM_EPOCHS:
+    for epoch in range(NUM_EPOCHS):
         tSt = datetime.now()
         for i, (sample, label, desired) in enumerate(loaded_train):
             sample = sample.to(device)
-            label = label.to(device)
             desired = desired.to(device)
 
             output = model(sample)
+
+            if i % 30 == 0:
+                for j in range(10):
+                    logging.debug(
+                        f"The number of times neuron {j} fired is {torch.sum(output[0][j][0][0])}")
+
+                layer1_psp = model.slayer.psp(model.fc1(sample))
+                layer1_spikes = model.slayer.spike(layer1_psp)
+
+                layer2_psp = model.slayer.psp(model.fc2(layer1_spikes))
+
+                for j in range(10):
+                    avg = float(
+                        torch.sum(layer2_psp[0][j][0][0])) / float(torch.numel(layer2_psp[0][j][0][0]))
+                    logging.debug(
+                        f"The average membrane potential for neuron {j} is {avg}")
 
             stats.training.correctSamples += torch.sum(
                 snn.predict.getClass(output) == label).data.item()
@@ -201,4 +221,4 @@ def main():
 
 
 if __name__ == "__main__":
-    overfit_single_batch()
+    main()
