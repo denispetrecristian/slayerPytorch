@@ -68,12 +68,12 @@ class Network(torch.nn.Module):
     def __init__(self):
         super(Network, self).__init__()
         self.slayer = snn.layer(netParams['neuron'], netParams['simulation'])
-        self.fc1 = self.slayer.dense((32, 32, 3), 410)
-        self.fc2 = self.slayer.dense(410, 10)
+        self.fc1 = self.slayer.dense((32, 32, 3), 410, weightScale=1)
+        self.fc2 = self.slayer.dense(410, 10, weightScale=1)
 
         # Initialize layers
-        torch.nn.init.uniform(self.fc1.weight, 0, 1/300)
-        torch.nn.init.uniform(self.fc2.weight, 0, 1/300)
+        # torch.nn.init.uniform(self.fc1.weight, 1/300, 1/90)
+        # torch.nn.init.uniform(self.fc2.weight, 1/40, 1/120)
 
         self.nTimeBins = int(
             netParams['simulation']['tSample'] / netParams['simulation']['Ts'])
@@ -117,7 +117,7 @@ def overfit_single_batch():
         network.load_state_dict(torch.load("network1"))
 
     optimizer = torch.optim.Adam(
-        network.parameters(), amsgrad=True, lr=1e-3, weight_decay=1e-4)
+        network.parameters(), amsgrad=True, lr=1e-4, weight_decay=1e-4)
     # optimizer = torch.optim.Adagrad(network.parameters(), lr=0.01)
 
     if load == True:
@@ -282,7 +282,7 @@ if __name__ == "__main__":
         network.load_state_dict(torch.load("network1"))
 
     optimizer = torch.optim.Adam(
-        network.parameters(), lr=8e-4, amsgrad=True, weight_decay=0.25)
+        network.parameters(), lr=1e-3, amsgrad=True, weight_decay=0.3)
 
     if load == True:
         optimizer.load_state_dict(torch.load("optimizer1"))
@@ -307,7 +307,21 @@ if __name__ == "__main__":
                 snn.predict.getClass(output) == label).data.item()
             stats.training.numSamples += len(label)
 
-            if i % 500 == 0:
+            if i % 10 == 0:
+                print(torch.sum(network.fc1.weight > 0))
+                print(torch.sum(network.fc2.weight > 0))
+
+                print("______________________")
+
+                print(torch.amax(network.fc1.weight))
+                print(torch.amin(network.fc1.weight))
+
+                print("______________________")
+
+                print(torch.amin(network.fc2.weight))
+                print(torch.amax(network.fc2.weight))
+
+            if i % 50 == 0:
                 logging.debug("____________________________________")
                 logging.debug(f"The desired class is {int(label)} ")
                 spikes = image_to_spike_tensor(sample, torch.zeros(
@@ -348,7 +362,7 @@ if __name__ == "__main__":
 
             optimizer.step()
 
-            if i % 100 == 0:
+            if i % 10 == 0:
                 stats.print(epoch, i, (datetime.now() -
                             time_start).total_seconds())
 

@@ -6,19 +6,16 @@ neuron:
     type:     SRMALPHA
     theta:    10
     tauSr:    10.0
-    tauRef:   1.0
-    scaleRef: 2     # relative to theta
-    tauRho:   1     # relative to theta #0.43429448190325176
-    scaleRho: 4
+    tauRef:   2.0
+    scaleRef: 4     # relative to theta
+    tauRho:   5     # relative to theta #0.43429448190325176
+    scaleRho: 5
 training:
     error:
         # type: NumSpikes #ProbSpikes #NumSpikes
         type: NumSpikes
         tgtSpikeRegion: {start: 0, stop: 1400}
         tgtSpikeCount: {true: 60, false: 10}
-        # probSlidingWin: 20  # only valid for ProbSpikes
-        # tgtSpikeRegion: {start: 0, stop: 300}    # only valid for NumSpikes and ProbSpikes
-        # tgtSpikeCount: {true: 60, false: 10}    # only valid for NumSpikes
     path:
         in: cifar-10-nm/
         train: cifar-10-nm/train9000.txt
