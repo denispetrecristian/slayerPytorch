@@ -9,6 +9,7 @@ import os
 from learningstats import learningStats
 import logging
 from datetime import datetime
+import zipfile
 
 logging.basicConfig(filename='dvscifar10.log',
                     encoding='utf-8', level=logging.DEBUG)
@@ -144,6 +145,10 @@ def overfit_single_batch():
 
 
 def main():
+
+    with zipfile.ZipFile("dataset.zip", "r") as zip_ref:
+        zip_ref.extractall("dataset")
+
     dataset_train = Cifar10DVS(netParams['training']['path']['in'], netParams['training']
                                ['path']['train'], netParams['simulation']['Ts'], netParams['simulation']['tSample'])
 
