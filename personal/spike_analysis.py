@@ -46,7 +46,7 @@ def add_to_potential(log_line: list):
     layer = 0
 
     for i in range(len(log_line)):
-        if log_line == "neuron":
+        if log_line[i] == "neuron":
             index = int(log_line[i+1])
 
     if "1st" in log_line:
@@ -67,7 +67,7 @@ def add_to_spikes(log_line: list):
     index = 0
     layer = 0
     for i in range(len(log_line)):
-        if log_line == "neuron":
+        if log_line[i] == "neuron":
             index = int(log_line[i+1])
 
     if "1st" in log_line:
@@ -85,22 +85,37 @@ def add_to_spikes(log_line: list):
 
 def draw_data(data):
     data = np.array(data)
-    for i in range(len(data)):
-        plt.plot(np.arange(0, len(data[i])), data[i])
-    plt.show()
-
+    splits = len(data) / 40
+    for j in range(int(splits)):
+        # for i in range(len(data)):
+        #     plt.plot(np.arange(0, len(data[i])), data[i])
+        if j % 15 == 0:
+            for sample in data[j * 20 : j * 20 + 19]:
+                plt.semilogy(np.arange(0,len(sample)), sample)
+            
+            
+                plt.show()
+    
+    # for j in range(len(data) - len(data) / 20):
+    #     for sample in data[splits * 20: ]:
+    #         plt.semilogy(np.arange())
+    #     plt.show()
 
 def check_non_firing_neuron(spike_numbers):
+    dead_neurons = 0
     for i in range(n1):
         sum = 0
         for times in spike_numbers[i]:
             sum+=times
         
         if sum == 0:
+            dead_neurons+=1
             print(f"Neuron {i} did not fire over the whole simulation")
         
         # if sum < 100:
         #     print(f"Neuron {i} only fired less than a hundred times in the simulation")
+    
+    print(f"The number of dead neurons is {dead_neurons}")
 
 parse_logging_file("rccifar10.log", "")
 draw_data(psp_values_layer1)

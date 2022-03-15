@@ -282,7 +282,7 @@ if __name__ == "__main__":
         network.load_state_dict(torch.load("network1"))
 
     optimizer = torch.optim.Adam(
-        network.parameters(), lr=1e-3, amsgrad=True, weight_decay=0.3)
+        network.parameters(), lr=2 * 1e-4, amsgrad=True, weight_decay=0.3)
 
     if load == True:
         optimizer.load_state_dict(torch.load("optimizer1"))
@@ -306,20 +306,6 @@ if __name__ == "__main__":
             stats.training.correctSamples += torch.sum(
                 snn.predict.getClass(output) == label).data.item()
             stats.training.numSamples += len(label)
-
-            if i % 10 == 0:
-                print(torch.sum(network.fc1.weight > 0))
-                print(torch.sum(network.fc2.weight > 0))
-
-                print("______________________")
-
-                print(torch.amax(network.fc1.weight))
-                print(torch.amin(network.fc1.weight))
-
-                print("______________________")
-
-                print(torch.amin(network.fc2.weight))
-                print(torch.amax(network.fc2.weight))
 
             if i % 50 == 0:
                 logging.debug("____________________________________")

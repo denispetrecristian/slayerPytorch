@@ -146,8 +146,8 @@ def overfit_single_batch():
 
 def main():
 
-    with zipfile.ZipFile("dataset.zip", "r") as zip_ref:
-        zip_ref.extractall("dataset")
+    # with zipfile.ZipFile("dataset.zip", "r") as zip_ref:
+    #     zip_ref.extractall("dataset")
 
     dataset_train = Cifar10DVS(netParams['training']['path']['in'], netParams['training']
                                ['path']['train'], netParams['simulation']['Ts'], netParams['simulation']['tSample'])
@@ -174,6 +174,9 @@ def main():
             desired = desired.to(device)
 
             output = model(sample)
+
+            print(model.fc1.weight.shape)
+            print(model.fc2.weight.shape)
 
             if i % 30 == 0:
                 for j in range(10):
