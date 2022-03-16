@@ -352,8 +352,8 @@ if __name__ == "__main__":
                 stats.print(epoch, i, (datetime.now() -
                             time_start).total_seconds())
 
-        torch.save(network.state_dict(), "network" + epoch)
-        torch.save(optimizer.state_dict(), "optimizer" + epoch)
+        torch.save(network.state_dict(), "network" + str(epoch))
+        torch.save(optimizer.state_dict(), "optimizer" + str(epoch))
 
         logging.info("Starting the testing")
 
