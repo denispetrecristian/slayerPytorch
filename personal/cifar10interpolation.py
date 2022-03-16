@@ -282,7 +282,7 @@ if __name__ == "__main__":
         network.load_state_dict(torch.load("network1"))
 
     optimizer = torch.optim.Adam(
-        network.parameters(), lr=2 * 1e-4, amsgrad=True, weight_decay=0.3)
+        network.parameters(), lr=10 * 1e-4, amsgrad=True, weight_decay=0.3)
 
     if load == True:
         optimizer.load_state_dict(torch.load("optimizer1"))
@@ -359,17 +359,18 @@ if __name__ == "__main__":
 
         network.eval()
 
-        with torch.no_grad:
-            for i, (input, label) in enumerate(loaded_test, 0):
-                input = input.to(device)
+        for i, (input, label) in enumerate(loaded_test, 0):
+            input = input.to(device)
 
-                output = network.forward(input)
+            output = network.forward(input)
 
-                stats.testing.correctSamples += torch.sum(
+            stats.testing.correctSamples += torch.sum(
                     snn.predict.getClass(output) == label).data.item()
-                stats.testing.numSamples += len(label)
+            stats.testing.numSamples += len(label)
 
-                loss = criterion.numSpikes(output, label)
-                stats.testing.lossSum += loss.cpu().data.item()
-                if i % 100 == 0:
-                    stats.print(epoch, i)
+            loss = criterion.numSpikes(output, label)
+            stats.testing.lossSum += loss.cpu().data.item()
+            if i % 100 == 0:
+                stats.print(epoch, i)
+
+        stats.update()
