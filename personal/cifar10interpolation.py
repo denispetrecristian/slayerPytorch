@@ -410,7 +410,14 @@ if __name__ == "__main__":
 
             optimizer.zero_grad()
 
-            loss.backward()
+            if i % 50 == 0:
+                get_dot = register_hooks(loss)
+                loss.backward()
+                dot = get_dot()
+                dot.render("gradCifar10Interpolation", format="png")
+            
+            else:
+                loss.backward()
 
             optimizer.step()
 
