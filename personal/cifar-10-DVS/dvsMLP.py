@@ -154,8 +154,8 @@ class Network(torch.nn.Module):
         super(Network, self).__init__()
         self.slayer = snn.layer(netParams['neuron'], netParams['simulation'])
         self.fc1 = self.slayer.dense((128, 128, 2), 410)
-        self.fc2 = self.slayer.dense(410, 240)
-        self.fc3 = self.slayer.dense(240, 10)
+        self.fc2 = self.slayer.dense(410, 10)
+        # self.fc3 = self.slayer.dense(240, 10)
 
         # torch.nn.init.uniform(self.fc1.weight, 0, 1/30)
         # torch.nn.init.uniform(self.fc2.weight, 0, 1/30)
@@ -163,9 +163,9 @@ class Network(torch.nn.Module):
     def forward(self, input):
         layer1 = self.slayer.spike(self.slayer.psp(self.fc1(input)))
         layer2 = self.slayer.spike(self.slayer.psp(self.fc2(layer1)))
-        layer3 = self.slayer.spike(self.slayer.psp(self.fc3(layer2)))
+        # layer3 = self.slayer.spike(self.slayer.psp(self.fc3(layer2)))
 
-        return layer3
+        return layer2
 
 
 def overfit_single_batch():
@@ -232,7 +232,7 @@ def main():
     stats = learningStats()
 
     for i in range(5):
-        sample, label, desired = dataset_train[i]
+        sample, label, desired = dataset_train[i*100]
         snn.io.showTD(snn.io.spikeArrayToEvent(sample.reshape((2,128,128,-1)).cpu().data.numpy()))
 
     for epoch in range(NUM_EPOCHS):
@@ -243,15 +243,21 @@ def main():
 
             output = model(sample)
 
-            if i % 30 == 0:
-                for j in range(10):
-                    logging.debug(
-                        f"The number of times neuron {j} fired is {torch.sum(output[0][j][0][0])}")
+            if i % 1 == 0:
 
                 layer1_psp = model.slayer.psp(model.fc1(sample))
                 layer1_spikes = model.slayer.spike(layer1_psp)
 
                 layer2_psp = model.slayer.psp(model.fc2(layer1_spikes))
+
+                for j in range(410):
+                    logging.debug(f"The number of times neuron {j} fired is {torch.sum(layer1_spikes[0][j][0][0])}")
+                    avg = float(torch.sum(layer1_psp[0][j][0][0])) / float(torch.numel(layer1_psp[0][j][0][0]))
+                    logging.debug(f"The average membrane potential for neuron {j} is {avg}")
+
+                for j in range(10):
+                    logging.debug(
+                        f"The number of times neuron {j} fired is {torch.sum(output[0][j][0][0])}")
 
                 for j in range(10):
                     avg = float(
