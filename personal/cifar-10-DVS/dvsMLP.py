@@ -13,6 +13,7 @@ import zipfile
 from graphviz import Digraph
 import torch
 from torch.autograd import Variable, Function
+import aedat
 
 
 logging.basicConfig(filename='dvscifar10.log',
@@ -28,7 +29,7 @@ device = torch.device("cuda")
 
 NUM_EPOCHS = 30
 LEARNING_RATE = 0.0002
-BATCH_SIZE = 8
+BATCH_SIZE = 1
 NUM_WORKERS = 0
 SCALE_OVERFIT = 1
 
@@ -124,22 +125,25 @@ class Cifar10DVS(Dataset):
         desired = torch.empty([10, 1, 1, 1])
         desired[category, ...] = 1
 
-        sample_index = "dataset/" + sample_index
+        sample_index = "dataset4/" + sample_index
+        decoder = aedat.Decoder(sample_index + "4")
 
-        with LegacyAedatFile(sample_index) as f:
-            # print(len(iter(f)))
-            for event in f:
-                x.append(event.x)
-                y.append(event.y)
-                p.append(event.polarity)
-                t.append(int(event.timestamp/1000))
+        for packet in decoder:
+            if 'events' in packet:
+                for i in range(len(packet['events'])):
+                    x.append(packet['events'][i][1])
+                    y.append(packet['events'][i][2])
+                    t.append(packet['events'][i][0] / 1000)
+                    p.append(packet['events'][i][3])
+        
+        decoder = None
 
         x = np.array(x)
         y = np.array(y)
         p = np.array(p)
         t = np.array(t)
 
-        return snn.io.event(x, y, p, t).toSpikeTensor(torch.empty((1, 128, 128, 1400))), category, desired
+        return snn.io.event(x, y, p, t).toSpikeTensor(torch.empty((2, 128, 128, 1400))), category, desired
 
     def __len__(self):
         return len(self.samples)
@@ -149,7 +153,7 @@ class Network(torch.nn.Module):
     def __init__(self, netParams):
         super(Network, self).__init__()
         self.slayer = snn.layer(netParams['neuron'], netParams['simulation'])
-        self.fc1 = self.slayer.dense((128, 128), 410)
+        self.fc1 = self.slayer.dense((128, 128, 2), 410)
         self.fc2 = self.slayer.dense(410, 240)
         self.fc3 = self.slayer.dense(240, 10)
 
@@ -226,6 +230,10 @@ def main():
         model.parameters(), lr=LEARNING_RATE, weight_decay=0.03)
 
     stats = learningStats()
+
+    for i in range(5):
+        sample, label, desired = dataset_train[i]
+        snn.io.showTD(snn.io.spikeArrayToEvent(sample.reshape((2,128,128,-1)).cpu().data.numpy()))
 
     for epoch in range(NUM_EPOCHS):
         tSt = datetime.now()
