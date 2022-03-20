@@ -27,7 +27,7 @@ netParams = snn.params("network.yaml")
 device = torch.device("cuda")
 
 NUM_EPOCHS = 30
-LEARNING_RATE = 0.0001
+LEARNING_RATE = 0.0005
 BATCH_SIZE = 1
 NUM_WORKERS = 0
 SCALE_OVERFIT = 10
@@ -132,35 +132,18 @@ class Cifar10DVS(Dataset):
         sample_index = self.samples[index]
         category = torch.tensor(parse_sample_name(sample_index))
 
-        x = []
-        y = []
-        p = []
-        t = []
-
         desired = torch.zeros([10, 1, 1, 1])
 
         desired[category, ...] = 1
 
-        sample_index = "dataset4/" + sample_index
-        decoder = aedat.Decoder(sample_index + "4")
+        sample_index = sample_index.replace(".aedat", ".bs2")
 
-        for packet in decoder:
-            if 'events' in packet:
-                for i in range(len(packet['events'])):
-                    if (packet['events'][i][0] / 1000) < self.nTimeBins:
-                        x.append(packet['events'][i][1])
-                        y.append(packet['events'][i][2])
-                        t.append(packet['events'][i][0] / 1000)
-                        p.append(packet['events'][i][3])
+        inputSpikes = snn.io.read2Dspikes(
+            self.path + str(sample_index)).toSpikeTensor(torch.zeros((2, 128, 128, self.nTimeBins)),
+                        samplingTime=self.samplingTime)
 
-        decoder = None
-
-        x = np.array(x)
-        y = np.array(y)
-        p = np.array(p)
-        t = np.array(t)
-
-        return snn.io.event(x, y, p, t).toSpikeTensor(torch.empty((2, 128, 128, self.nTimeBins))), category, desired
+        return inputSpikes, category, desired 
+        
 
     def __len__(self):
         return len(self.samples)
@@ -250,10 +233,10 @@ def overfit_single_batch():
 
 def main():
 
-    with zipfile.ZipFile('dataset4.zip') as zip_file:
-        for member in zip_file.namelist():
-            if not os.path.exists('./dataset/' + member):
-                zip_file.extract(member, './dataset')
+    # with zipfile.ZipFile('dataset4.zip') as zip_file:
+    #     for member in zip_file.namelist():
+    #         if not os.path.exists('./dataset/' + member):
+    #             zip_file.extract(member, './dataset')
 
     dataset_train = Cifar10DVS(netParams['training']['path']['in'], netParams['training']
                                ['path']['train'], netParams['simulation']['Ts'], netParams['simulation']['tSample'])
