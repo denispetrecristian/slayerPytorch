@@ -1,0 +1,21 @@
+simulation:
+    Ts: 1.0
+    tSample: 800
+    nSample: 1
+neuron:
+    type:     SRMALPHA
+    theta:    10
+    tauSr:    10.0
+    tauRef:   2.0
+    scaleRef: 4     # relative to theta
+    tauRho:   8     # relative to theta #0.43429448190325176
+    scaleRho: 10
+training:
+    error:
+        # type: NumSpikes #ProbSpikes #NumSpikes
+        type: NumSpikes
+        tgtSpikeRegion: {start: 0, stop: 800}
+        tgtSpikeCount: {true: 400, false: 100}
+    path:
+        in: cifar-10-nm/
+        train: cifar-10-nm/train9000.txt
