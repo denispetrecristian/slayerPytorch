@@ -137,7 +137,7 @@ torch::Tensor shiftFl1Cuda(torch::Tensor input, float shiftLUT)
 torch::Tensor poissonEncoding(torch::Tensor input, int tSample){
 	CHECK_INPUT(input);
 
-	cudaSetDevice(input.device().index())
+	cudaSetDevice(input.device().index());
 
 	auto output = torch::zeros({input.size(0), input.size(1), input.size(2), input.size(3), tSample});
 	unsigned nNeurons = input.size(0) * input.size(1) * input.size(2) * input.size(3);
@@ -150,7 +150,7 @@ torch::Tensor poissonEncoding(torch::Tensor input, int tSample){
 torch::Tensor rateEncoding(torch::Tensor input, int tSample){
 	CHECK_INPUT(input);
 
-	cudaSetDevice(input.device().index())
+	cudaSetDevice(input.device().index());
 
 	auto output = torch::zeros({input.size(0), input.size(1), input.size(2), input.size(3), tSample});
 	unsigned nNeurons = input.size(0) * input.size(1) * input.size(2) * input.size(3);
