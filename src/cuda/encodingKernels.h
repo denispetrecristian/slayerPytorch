@@ -8,22 +8,26 @@ This header contains methods to encode Image Tensors into Spike Tensors
 
 #include <curand.h>
 #include <curand_kernel.h>
+#include <stdio.h>
 
 template <class T>
 __global__ void rateEncodingKernel(T * __restrict__ output, const T* __restrict__ input, unsigned nNeurons, int tSample)
 {
 
     unsigned neuronID = blockIdx.x * blockDim.x + threadIdx.x;
-
+    printf("The neuron id is %d\n", neuronID);
     if (neuronID > nNeurons)
         return;
 
+    
     unsigned value = input[neuronID];
+    printf("The value is %d\n", value);
     unsigned interval = floor(tSample / value);
 
     for (unsigned i = 0; i < interval; i++)
     {
         output[neuronID * tSample + interval * i] = 1;
+        printf("The timestamp id is %d\n", neuronID*tSample + interval * i);
     }
 }
 
@@ -51,7 +55,7 @@ template <class T>
 void poisson(T *output, const T *input, unsigned nNeurons, int tSample)
 {
     // This code assumes the Ts to be equal to 1
-    unsigned thread = 1024;
+    unsigned thread = 256;
     unsigned block = ceil(1.0f * nNeurons / thread);
 
     poissonEncodingKernel<T><<<block, thread>>>(output, input, nNeurons, tSample);
@@ -61,7 +65,7 @@ template <class T>
 void rate(T *output, const T *input, unsigned nNeurons, int tSample)
 {
     // This code assumes the Ts to be equal to 1
-    unsigned thread = 1024;
+    unsigned thread = 256;
     unsigned block = ceil(1.0f * nNeurons / thread);
     rateEncodingKernel<T><<<block, thread>>>(output, input, nNeurons, tSample);
 }
