@@ -12,7 +12,8 @@ setup(
             depends=[
                 'src/cuda/spikeKernels.h',
                 'src/cuda/convKernels.h',
-                'src/cuda/shiftKernels.h'
+                'src/cuda/shiftKernels.h',
+                'src/cuda/encodingKernels.h'
             ],
             extra_compile_args={
                 'cxx': ['-g'],

@@ -3,6 +3,7 @@
 #include "spikeKernels.h"
 #include "convKernels.h"
 #include "shiftKernels.h"
+#include "encodingKernels.h"
 
 #define CHECK_CUDA(x) AT_ASSERTM(x.type().is_cuda(), #x " must be a CUDA tensor")
 #define CHECK_CONTIGUOUS(x) AT_ASSERTM(x.is_contiguous(), #x " must be contiguous")
@@ -133,6 +134,32 @@ torch::Tensor shiftFl1Cuda(torch::Tensor input, float shiftLUT)
 	return shiftFlCuda(input, shiftLUT, 1.0f);
 }
 
+torch::Tensor poissonEncoding(torch::Tensor input, int tSample){
+	CHECK_INPUT(input);
+
+	cudaSetDevice(input.device().index())
+
+	auto output = torch::zeros({input.size(0), input.size(1), input.size(2), input.size(3), tSample});
+	unsigned nNeurons = input.size(0) * input.size(1) * input.size(2) * input.size(3);
+
+	poisson<float>(output.data<float>(), input.data<float>(), nNeurons, tSample);
+
+	return output;
+}
+
+torch::Tensor rateEncoding(torch::Tensor input, int tSample){
+	CHECK_INPUT(input);
+
+	cudaSetDevice(input.device().index())
+
+	auto output = torch::zeros({input.size(0), input.size(1), input.size(2), input.size(3), tSample});
+	unsigned nNeurons = input.size(0) * input.size(1) * input.size(2) * input.size(3);
+
+	rate<float>(output.data<float>(), input.data<float>(), nNeurons, tSample);
+
+	return output;
+}
+
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m)
 {
 	m.def("getSpikes", &getSpikesCuda, "Get spikes (CUDA)");
@@ -142,4 +169,6 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m)
 	m.def("shift"    , &shift1Cuda   , "Element shift in time (CUDA)");
 	m.def("shift"    , &shiftFlCuda  , "Element shift in time (CUDA)");
 	m.def("shift"    , &shiftFl1Cuda , "Element shift in time (CUDA)");
+	m.def("rateEncoding"  , &rateEncoding , "Encode image in time (CUDA)");
+	m.def("poissonEncoding", &poissonEncoding, "Encode image in time (CUDA)");
 }
