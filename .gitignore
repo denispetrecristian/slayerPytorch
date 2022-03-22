@@ -35,3 +35,8 @@ personal/cifar-10-DVS/dataset/ship
 personal/cifar-10-DVS/dataset/truck
 personal/rccifar10.log
 personal/cifar-10-DVS/dvscifar10.log
+personal/cifar-10-DVS/dataset4/*
+personal/cifar-10-DVS/cifar10_airplane_0.aedat4
+personal/cifar-10-DVS/datasetbs2
+personal/cifar-10-DVS/dataset.zip
+personal/cifar-10-DVS/datasetbs2.zip
