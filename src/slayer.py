@@ -94,7 +94,15 @@ class spikeLayer(torch.nn.Module):
         # self.refKernel = self.calculateRefKernel()
         self.register_buffer('srmKernel', self.calculateSrmKernel())
         self.register_buffer('refKernel', self.calculateRefKernel())
-        
+
+    def rateEncoding(self, image):
+        tSample = self.simulation['tSample']
+        return slayerCuda.rateEncoding(image.contiguous(), tSample)
+    
+    def poissonEncoding(self, image):
+        tSample = self.simulation['tSample']
+        return slayerCuda.poissonEncoding(image.contiguous(), tSample)
+                
     def calculateSrmKernel(self):
         srmKernel = self._calculateAlphaKernel(self.neuron['tauSr'])
         # TODO implement for different types of kernels
