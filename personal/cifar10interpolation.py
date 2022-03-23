@@ -137,21 +137,13 @@ class Network(torch.nn.Module):
         self.fc1 = self.slayer.dense((32, 32, 3), 410, weightScale=1)
         self.fc2 = self.slayer.dense(410, 10, weightScale=1)
 
-        # Initialize layers
-        # torch.nn.init.uniform(self.fc1.weight, 1/300, 1/90)
-        # torch.nn.init.uniform(self.fc2.weight, 1/40, 1/120)
-
         self.nTimeBins = int(
             netParams['simulation']['tSample'] / netParams['simulation']['Ts'])
         self.timeStep = int(netParams['simulation']['Ts'])
 
-        self.pspLayer = self.slayer.pspLayer()
-
     def forward(self, input):
-        spikes = image_to_spike_tensor(input, torch.zeros(
-            (1, 3, 32, 32, self.nTimeBins)), self.timeStep)
-        if int(torch.sum(spikes)) != int(torch.sum(input)):
-            raise Exception("Error in conversion")
+
+        spikes = self.slayer.rateEncoding(input)
 
         layer1 = self.slayer.spike(self.slayer.psp(self.fc1(spikes)))
         layer2 = self.slayer.spike(self.slayer.psp(self.fc2(layer1)))
