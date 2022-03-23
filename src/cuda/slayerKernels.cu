@@ -139,7 +139,8 @@ torch::Tensor poissonEncoding(torch::Tensor input, int tSample){
 
 	cudaSetDevice(input.device().index());
 
-	auto output = torch::zeros({input.size(0), input.size(1), input.size(2), input.size(3), tSample});
+	auto options = torch::TensorOptions().device(input.device());
+	auto output = torch::zeros({input.size(0), input.size(1), input.size(2), input.size(3), tSample}, options);
 	unsigned nNeurons = input.size(0) * input.size(1) * input.size(2) * input.size(3);
 
 	poisson<float>(output.data<float>(), input.data<float>(), nNeurons, tSample);
@@ -152,7 +153,8 @@ torch::Tensor rateEncoding(torch::Tensor input, int tSample){
 
 	cudaSetDevice(input.device().index());
 
-	auto output = torch::zeros({input.size(0), input.size(1), input.size(2), input.size(3), tSample});
+	auto options = torch::TensorOptions().device(input.device());
+	auto output = torch::zeros({input.size(0), input.size(1), input.size(2), input.size(3), tSample}, options);
 	unsigned nNeurons = input.size(0) * input.size(1) * input.size(2) * input.size(3);
 
 	rate<float>(output.data<float>(), input.data<float>(), nNeurons, tSample);
