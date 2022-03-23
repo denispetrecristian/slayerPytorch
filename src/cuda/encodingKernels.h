@@ -11,31 +11,30 @@ This header contains methods to encode Image Tensors into Spike Tensors
 #include <stdio.h>
 
 template <class T>
-__global__ void rateEncodingKernel(T * __restrict__ output, const T* __restrict__ input, unsigned nNeurons, int tSample)
+__global__ void rateEncodingKernel(T *__restrict__ output, const T *__restrict__ input, unsigned nNeurons, int tSample)
 {
 
     unsigned neuronID = blockIdx.x * blockDim.x + threadIdx.x;
-    printf("The neuron id is %d\n", neuronID);
     if (neuronID > nNeurons)
         return;
 
-    
     unsigned value = input[neuronID];
-    printf("The value is %d\n", value);
     unsigned interval = floor(tSample / value);
 
-    for (unsigned i = 0; i < interval; i++)
+    for (unsigned i = 0; i < tSample; i++)
     {
-        output[neuronID * tSample + interval * i] = 1;
-        printf("The timestamp id is %d\n", neuronID*tSample + interval * i);
+        if (i % interval == 0)
+        {
+            output[neuronID * tSample + i] = 1;
+        }
     }
 }
 
 template <class T>
-__global__ void poissonEncodingKernel(T * __restrict__ output, const T * __restrict__ input, unsigned nNeurons, int tSample)
+__global__ void poissonEncodingKernel(T *__restrict__ output, const T *__restrict__ input, unsigned nNeurons, int tSample)
 {
     unsigned neuronID = blockIdx.x * blockDim.x + threadIdx.x;
-    unsigned value = input[neuronID];
+    float value = input[neuronID];
     curandState state;
     curand_init(value * 1000, neuronID, 0, &state);
 
