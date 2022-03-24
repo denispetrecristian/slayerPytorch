@@ -35,6 +35,8 @@ SCALE_OVERFIT = 10
 logging_time = 10
 gradient_logging_time = 100
 
+load = True
+last_epoch_before_save = 1
 
 def iter_graph(root, callback):
     queue = [root]
@@ -249,10 +251,15 @@ def main():
     loaded_test = DataLoader(
         dataset_test, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS, shuffle=False)
 
-    model = Network(netParams).to(device)
+    
     criterion = snn.loss(netParams).to(device)
+    model = Network(netParams).to(device)
     optimizer = torch.optim.Adam(
         model.parameters(), lr=LEARNING_RATE, weight_decay=0.6)
+    
+    if load == True:
+        model.load_state_dict(torch.load("network_Dvs" + str(last_epoch_before_save)))
+        optimizer.load_state_dict(torch.load("optimizer_Dvs" + str(last_epoch_before_save)))
 
     stats = learningStats()
 
@@ -336,6 +343,23 @@ def main():
                 stats.print(epoch, i)
 
         stats.update()
+
+    plt.figure(1)
+    plt.semilogy(stats.training.lossLog, label='Training')
+    plt.semilogy(stats.testing .lossLog, label='Testing')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.savefig("LossDVS.png")
+
+    # Learning accuracy
+    plt.figure(2)
+    plt.plot(stats.training.accuracyLog, label='Training')
+    plt.plot(stats.testing .accuracyLog, label='Testing')
+    plt.xlabel('Epoch')
+    plt.ylabel('Accuracy')
+    plt.legend()
+    plt.savefig("AccDVS.png")
 
 
 if __name__ == "__main__":
