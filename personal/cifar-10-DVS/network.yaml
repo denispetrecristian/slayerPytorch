@@ -1,22 +1,22 @@
 simulation:
     Ts: 1.0
-    tSample: 1400
+    tSample: 1000
     nSample: 1
 neuron:
     type:     SRMALPHA
     theta:    10
-    tauSr:    40.0
+    tauSr:    30.0
     tauRef:   4.0
     scaleRef: 2     # relative to theta
-    tauRho:   10     # relative to theta #0.43429448190325176
-    scaleRho: 10
+    tauRho:   1     # relative to theta #0.43429448190325176
+    scaleRho: 1
 training:
     error:
         # type: NumSpikes #ProbSpikes #NumSpikes
         type: NumSpikes
-        tgtSpikeRegion: {start: 0, stop: 1400}
-        tgtSpikeCount: {true: 60, false: 10}
+        tgtSpikeRegion: {start: 0, stop: 1000}
+        tgtSpikeCount: {true: 220, false: 100}
     path:
-        in: dataset4/
-        train: dataset4/train9000.txt
-        test: dataset4/test1000.txt
+        in: dataset/datasetbs2/
+        train: dataset/train9000.txt
+        test: dataset/test1000.txt

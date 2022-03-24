@@ -233,10 +233,10 @@ def overfit_single_batch():
 
 def main():
 
-    # with zipfile.ZipFile('dataset4.zip') as zip_file:
-    #     for member in zip_file.namelist():
-    #         if not os.path.exists('./dataset/' + member):
-    #             zip_file.extract(member, './dataset')
+    with zipfile.ZipFile('dataset/datasetbs2.zip') as zip_file:
+        for member in zip_file.namelist():
+            if not os.path.exists('./dataset/' + member):
+                zip_file.extract(member, './dataset')
 
     dataset_train = Cifar10DVS(netParams['training']['path']['in'], netParams['training']
                                ['path']['train'], netParams['simulation']['Ts'], netParams['simulation']['tSample'])
@@ -257,7 +257,7 @@ def main():
     stats = learningStats()
 
     for i in range(5):
-        sample, label, desired = dataset_train[i + 150]
+        sample, label, desired = dataset_train[i*50]
         snn.io.showTD(snn.io.spikeArrayToEvent(
             sample.reshape((2, 128, 128, -1)).cpu().data.numpy()))
 
