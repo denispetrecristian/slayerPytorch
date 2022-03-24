@@ -316,6 +316,9 @@ def main():
             if i % 10 == 0:
                 stats.print(epoch, i, (datetime.now() - tSt).total_seconds())
 
+        torch.save(model.state_dict(), "network_Dvs" + str(epoch))
+        torch.save(optimizer.state_dict(), "optimizer_Dvs" + str(epoch))        
+
         for i, (sample, label, desired) in enumerate(loaded_test):
             sample = sample.to(device)
             desired = desired.to(device)
