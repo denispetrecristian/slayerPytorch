@@ -21,7 +21,7 @@ __global__ void rateEncodingKernel(T *__restrict__ output, const T *__restrict__
     unsigned value = input[neuronID];
     unsigned interval = floor(tSample / value);
 
-    for (unsigned i = 0; i < tSample; i++)
+    for (unsigned i = 1; i < tSample; i++)
     {
         if (i % interval == 0)
         {
@@ -40,7 +40,7 @@ __global__ void poissonEncodingKernel(T *__restrict__ output, const T *__restric
 
     if (neuronID > nNeurons)
         return;
-    for (unsigned i = 0; i < tSample; i++)
+    for (unsigned i = 1; i < tSample; i++)
     {
         float unifRand = curand_uniform(&state);
         if (unifRand < value)
