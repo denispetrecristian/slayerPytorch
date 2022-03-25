@@ -343,6 +343,9 @@ def main():
                 stats.print(epoch, i)
 
         stats.update()
+        
+        # Pytorch does not properly release memory
+        torch.cuda.empty_cache()
 
     plt.figure(1)
     plt.semilogy(stats.training.lossLog, label='Training')
