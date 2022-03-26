@@ -40,3 +40,5 @@ personal/cifar-10-DVS/cifar10_airplane_0.aedat4
 personal/cifar-10-DVS/datasetbs2
 personal/cifar-10-DVS/dataset.zip
 personal/cifar-10-DVS/datasetbs2.zip
+personal/N-Caltech-101/dataset/*
+personal/fashionMNIST/dataset/*
