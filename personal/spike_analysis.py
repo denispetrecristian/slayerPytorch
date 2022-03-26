@@ -118,6 +118,6 @@ def check_non_firing_neuron(spike_numbers):
     print(f"The number of dead neurons is {dead_neurons}")
 
 parse_logging_file("rccifar10.log", "")
-draw_data(psp_values_layer1)
-draw_data(spike_numbers_layer1)
+# draw_data(psp_values_layer1)
+# draw_data(spike_numbers_layer1)
 check_non_firing_neuron(spike_numbers_layer1)
