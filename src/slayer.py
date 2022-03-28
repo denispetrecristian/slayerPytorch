@@ -854,7 +854,8 @@ class _spikeFunction(torch.autograd.Function):
         # pdfTimeConstant = torch.autograd.Variable(torch.tensor(neuron['tauRho']                   , device=device, dtype=dtype), requires_grad=False) # needs to be scaled by theta
         pdfTimeConstant = torch.autograd.Variable(torch.tensor(neuron['tauRho'] * neuron['theta'] , device=device, dtype=dtype), requires_grad=False) # needs to be scaled by theta
         threshold       = torch.autograd.Variable(torch.tensor(neuron['theta']                    , device=device, dtype=dtype), requires_grad=False)
-        ctx.save_for_backward(membranePotential, threshold, pdfTimeConstant, pdfScale)
+        derivativeType  = torch.autograd.Variable(torch.tensor(neuron['rho']                      , device=device, dtype=dtype), requires_grad=False)
+        ctx.save_for_backward(membranePotential, threshold, pdfTimeConstant, pdfScale, derivativeType)
         # torch.cuda.synchronize()
         
         # if device != oldDevice: torch.cuda.set_device(oldDevice)
@@ -866,8 +867,13 @@ class _spikeFunction(torch.autograd.Function):
     def backward(ctx, gradOutput):
         '''
         '''
-        (membranePotential, threshold, pdfTimeConstant, pdfScale) = ctx.saved_tensors
-        spikePdf = pdfScale / pdfTimeConstant * torch.exp( -torch.abs(membranePotential - threshold) / pdfTimeConstant)
+        (membranePotential, threshold, pdfTimeConstant, pdfScale, derivativeType) = ctx.saved_tensors
+        if derivativeType == 0:
+            spikePdf = pdfScale / pdfTimeConstant * torch.exp( -torch.abs(membranePotential - threshold) / pdfTimeConstant)
+        if derivativeType == 1:
+            spikePdf = pdfScale / pdfTimeConstant * torch.max(1 - torch.abs(membranePotential - threshold))
+        if derivativeType == 2:
+            spikePdf = pdfScale / pdfTimeConstant * math.tanh((threshold - membranePotential) / pdfTimeConstant)
 
         # return gradOutput, None, None, None # This seems to work better!
         return gradOutput * spikePdf, None, None, None

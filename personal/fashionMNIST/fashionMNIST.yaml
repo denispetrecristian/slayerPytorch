@@ -10,6 +10,7 @@ neuron:
     scaleRef: 4     
     tauRho:   8     
     scaleRho: 10
+    rho: 0
 training:
     error:
         # type: NumSpikes #ProbSpikes #NumSpikes

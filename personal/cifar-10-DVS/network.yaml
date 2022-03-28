@@ -10,6 +10,7 @@ neuron:
     scaleRef: 2     # relative to theta
     tauRho:   1     # relative to theta #0.43429448190325176
     scaleRho: 1
+    rho: 0
 training:
     error:
         # type: NumSpikes #ProbSpikes #NumSpikes
