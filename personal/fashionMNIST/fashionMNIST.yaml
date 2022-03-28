@@ -17,5 +17,5 @@ training:
         tgtSpikeRegion: {start: 0, stop: 1400}
         tgtSpikeCount: {true: 220, false: 100}
     path:
-        train: "dataset/fashion-mnist_train.csv"
-        test: "dataset/fashion-mnist_test.csv"
+        train: "dataset/"
+        test: "dataset/"

@@ -61,7 +61,7 @@ class NetworkInterpolationMLP(torch.nn.Module):
 
 class NetworkRateMLP(torch.nn.Module):
     def __init__(self, netParams):
-        super(NetworkInterpolationMLP, self).__init__()
+        super(NetworkRateMLP, self).__init__()
         self.slayer = snn.layer(netParams['neuron'], netParams['simulation'])
         self.fc1 = self.slayer.dense((28, 28), 410)
         self.fc2 = self.slayer.dense(410, 10)
@@ -76,7 +76,7 @@ class NetworkRateMLP(torch.nn.Module):
 
 class NetworkPoissonMLP(torch.nn.Module):
     def __init__(self, netParams):
-        super(NetworkInterpolationMLP, self).__init__()
+        super(NetworkPoissonMLP, self).__init__()
         self.slayer = snn.layer(netParams['neuron'], netParams['simulation'])
         self.fc1 = self.slayer.dense((28, 28), 410)
         self.fc2 = self.slayer.dense(410, 10)
@@ -115,7 +115,7 @@ class NetworkInterpolationCNN(torch.nn.Module):
 
 class NetworkRateCNN(torch.nn.Module):
     def __init__(self, netParams):
-        super().__init__(NetworkInterpolationCNN, self)
+        super().__init__(NetworkRateCNN, self)
         self.slayer = snn.layer(netParams['neuron'], netParams['simulation'])
         self.conv1 = self.slayer.conv(1, 16, 5, padding=2)
         self.pool = self.slayer.pool((2, 2))
@@ -138,7 +138,7 @@ class NetworkRateCNN(torch.nn.Module):
 
 class NetworkPoissonCNN(torch.nn.Module):
     def __init__(self, netParams):
-        super().__init__(NetworkInterpolationCNN, self)
+        super().__init__(NetworkPoissonCNN, self)
         self.slayer = snn.layer(netParams)
         self.conv1 = self.slayer.conv(1, 16, 5, padding=2)
         self.pool = self.slayer.pool((2, 2))
@@ -170,9 +170,9 @@ def main():
             root=netParams['training']['path']['test'], transform=transform, train=False, download=download_value)
     else:
         datasetTrain = torchvision.datasets.FashionMNIST(
-            root=netParams['training']['path']['train'], transform=transformPoisson)
+            root=netParams['training']['path']['train'], transform=transformPoisson, download=download_value)
         datasetTest = torchvision.datasets.FashionMNIST(
-            root=netParams['training']['path']['test'], transform=transform, train=False)
+            root=netParams['training']['path']['test'], transform=transform, train=False, download=download_value)
 
     if args.encoding == "poisson":
         if args.model == "CNN":
