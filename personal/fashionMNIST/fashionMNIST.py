@@ -1,5 +1,4 @@
 from logging import root
-from this import d
 import torch
 import slayerSNN as snn
 import torchvision
@@ -16,7 +15,7 @@ parser.add_argument("-e", "--encoding", dest="encoding")
 
 args = parser.parse_args()
 
-device = torch.cuda("device")
+device = torch.device("cuda")
 netParams = snn.params("fashionMNIST.yaml")
 
 logging.basicConfig(filename='fashion.log', level=logging.DEBUG)
@@ -26,12 +25,13 @@ magnitude = 10
 NUM_EPOCHS = 10
 LEARNING_RATE = 1e-3
 WEIGHT_DECAY = 0.5
+download_value = True
 
 transform = torchvision.transforms.Compose(
     [torchvision.transforms.ToTensor(), lambda x: x*255])
 
-transformPoisson = torchvision.transforms.Compose(
-    torchvision.transforms.ToTensor(), lambda x: x / magnitude)
+transformPoisson = torchvision.transforms.Compose([
+    torchvision.transforms.ToTensor(), lambda x: x / magnitude])
 
 
 def replicate(input, num_steps):
@@ -44,14 +44,14 @@ def replicate(input, num_steps):
 
 
 class NetworkInterpolationMLP(torch.nn.Module):
-    def __init__(self):
+    def __init__(self, netParams):
         super(NetworkInterpolationMLP, self).__init__()
-        self.slayer = snn.layer(netParams, netParams['simulation']['tSample'])
+        self.slayer = self.slayer = snn.layer(netParams['neuron'], netParams['simulation'])
         self.fc1 = self.slayer.dense((28, 28), 410)
         self.fc2 = self.slayer.dense(410, 10)
 
     def forward(self, input):
-        x = replicate(input)
+        x = replicate(input, netParams['simulation']['tSample'])
         x.reshape(1, 1, 28, 28, x.shape[-1])
         x = self.slayer.spike(self.slayer.psp(self.fc1(x)))
         x = self.slayer.spike(self.slayer.psp(self.fc2(x)))
@@ -60,9 +60,9 @@ class NetworkInterpolationMLP(torch.nn.Module):
 
 
 class NetworkRateMLP(torch.nn.Module):
-    def __init__(self):
+    def __init__(self, netParams):
         super(NetworkInterpolationMLP, self).__init__()
-        self.slayer = snn.layer(netParams)
+        self.slayer = snn.layer(netParams['neuron'], netParams['simulation'])
         self.fc1 = self.slayer.dense((28, 28), 410)
         self.fc2 = self.slayer.dense(410, 10)
 
@@ -75,9 +75,9 @@ class NetworkRateMLP(torch.nn.Module):
 
 
 class NetworkPoissonMLP(torch.nn.Module):
-    def __init__(self):
+    def __init__(self, netParams):
         super(NetworkInterpolationMLP, self).__init__()
-        self.slayer = snn.layer(netParams)
+        self.slayer = snn.layer(netParams['neuron'], netParams['simulation'])
         self.fc1 = self.slayer.dense((28, 28), 410)
         self.fc2 = self.slayer.dense(410, 10)
 
@@ -90,9 +90,9 @@ class NetworkPoissonMLP(torch.nn.Module):
 
 
 class NetworkInterpolationCNN(torch.nn.Module):
-    def __init__(self):
+    def __init__(self, netParams):
         super().__init__(NetworkInterpolationCNN, self)
-        self.slayer = snn.layer(netParams)
+        self.slayer = snn.layer(netParams['neuron'], netParams['simulation'])
         self.conv1 = self.slayer.conv(1, 16, 5, padding=2)
         self.pool = self.slayer.pool((2, 2))
         self.conv2 = self.slayer.conv(16, 32, 5, padding=2)
@@ -114,9 +114,9 @@ class NetworkInterpolationCNN(torch.nn.Module):
 
 
 class NetworkRateCNN(torch.nn.Module):
-    def __init__(self):
+    def __init__(self, netParams):
         super().__init__(NetworkInterpolationCNN, self)
-        self.slayer = snn.layer(netParams)
+        self.slayer = snn.layer(netParams['neuron'], netParams['simulation'])
         self.conv1 = self.slayer.conv(1, 16, 5, padding=2)
         self.pool = self.slayer.pool((2, 2))
         self.conv2 = self.slayer.conv(16, 32, 5, padding=2)
@@ -137,7 +137,7 @@ class NetworkRateCNN(torch.nn.Module):
 
 
 class NetworkPoissonCNN(torch.nn.Module):
-    def __init__(self):
+    def __init__(self, netParams):
         super().__init__(NetworkInterpolationCNN, self)
         self.slayer = snn.layer(netParams)
         self.conv1 = self.slayer.conv(1, 16, 5, padding=2)
@@ -165,9 +165,9 @@ def main():
 
     if args.encoding != "poisson":
         datasetTrain = torchvision.datasets.FashionMNIST(
-            root=netParams['training']['path']['train'], transform=transform)
+            root=netParams['training']['path']['train'], transform=transform, download=download_value)
         datasetTest = torchvision.datasets.FashionMNIST(
-            root=netParams['training']['path']['test'], transform=transform, train=False)
+            root=netParams['training']['path']['test'], transform=transform, train=False, download=download_value)
     else:
         datasetTrain = torchvision.datasets.FashionMNIST(
             root=netParams['training']['path']['train'], transform=transformPoisson)
