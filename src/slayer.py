@@ -874,6 +874,9 @@ class _spikeFunction(torch.autograd.Function):
             spikePdf = pdfScale / pdfTimeConstant * torch.max(1 - torch.abs(membranePotential - threshold))
         if int(derivativeType) == 2:
             spikePdf = pdfScale / pdfTimeConstant * math.tanh((threshold - membranePotential) / pdfTimeConstant)
+        if int(derivativeType) == 3:
+            # Pdf scale in this situation works like the lens in the original paper
+            spikePdf = torch.exp( -(membranePotential - threshold) ** 2 / (2 * pdfScale ** 2)) / ((2 * pdfScale * math.pi) ** 0.5)
 
         # return gradOutput, None, None, None # This seems to work better!
         return gradOutput * spikePdf, None, None, None
