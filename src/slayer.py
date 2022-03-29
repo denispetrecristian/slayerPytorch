@@ -868,11 +868,11 @@ class _spikeFunction(torch.autograd.Function):
         '''
         '''
         (membranePotential, threshold, pdfTimeConstant, pdfScale, derivativeType) = ctx.saved_tensors
-        if derivativeType == 0:
+        if int(derivativeType) == 0:
             spikePdf = pdfScale / pdfTimeConstant * torch.exp( -torch.abs(membranePotential - threshold) / pdfTimeConstant)
-        if derivativeType == 1:
+        if int(derivativeType) == 1:
             spikePdf = pdfScale / pdfTimeConstant * torch.max(1 - torch.abs(membranePotential - threshold))
-        if derivativeType == 2:
+        if int(derivativeType) == 2:
             spikePdf = pdfScale / pdfTimeConstant * math.tanh((threshold - membranePotential) / pdfTimeConstant)
 
         # return gradOutput, None, None, None # This seems to work better!
