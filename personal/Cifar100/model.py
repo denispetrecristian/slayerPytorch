@@ -92,7 +92,7 @@ class NetworkPoissonMLP(torch.nn.Module):
 
 class NetworkInterpolationCNN(torch.nn.Module):
     def __init__(self, netParams):
-        super().__init__(NetworkInterpolationCNN, self)
+        super(NetworkInterpolationCNN, self).__init__()
         self.slayer = snn.layer(netParams['neuron'], netParams['simulation'])
         self.conv1 = self.slayer.conv(3, 6, 5)
         self.pool1 = self.slayer.pool((2, 2))
@@ -117,7 +117,7 @@ class NetworkInterpolationCNN(torch.nn.Module):
 
 class NetworkRateCNN(torch.nn.Module):
     def __init__(self, netParams):
-        super().__init__(NetworkRateCNN, self)
+        super(NetworkRateCNN, self).__init__()
         self.slayer = snn.layer(netParams['neuron'], netParams['simulation'])
         self.conv1 = self.slayer.conv(3, 6, 5)
         self.pool1 = self.slayer.pool((2, 2))
@@ -142,7 +142,7 @@ class NetworkRateCNN(torch.nn.Module):
 
 class NetworkPoissonCNN(torch.nn.Module):
     def __init__(self, netParams):
-        super().__init__(NetworkPoissonCNN, self)
+        super(NetworkPoissonCNN, self).__init__()
         self.slayer = snn.layer(netParams['neuron'], netParams['simulation'])
         self.conv1 = self.slayer.conv(3, 6, 5)
         self.pool1 = self.slayer.pool((2, 2))
