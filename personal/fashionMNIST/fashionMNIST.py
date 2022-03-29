@@ -107,6 +107,7 @@ class NetworkInterpolationCNN(torch.nn.Module):
         x = self.slayer.spike(self.slayer.psp(self.pool(x)))
         x = self.slayer.spike(self.slayer.psp(self.conv2(x)))
         x = self.slayer.spike(self.slayer.psp(self.pool(x)))
+        x = x.reshape(1, 1568,1,1,x.shape[-1])
         x = self.slayer.spike(self.slayer.psp(self.fc1(x)))
         x = self.slayer.spike(self.slayer.psp(self.fc2(x)))
 
@@ -130,6 +131,7 @@ class NetworkRateCNN(torch.nn.Module):
         x = self.slayer.spike(self.slayer.psp(self.pool(x)))
         x = self.slayer.spike(self.slayer.psp(self.conv2(x)))
         x = self.slayer.spike(self.slayer.psp(self.pool(x)))
+        x = x.reshape(1, 1568,1,1,x.shape[-1])
         x = self.slayer.spike(self.slayer.psp(self.fc1(x)))
         x = self.slayer.spike(self.slayer.psp(self.fc2(x)))
 
@@ -153,6 +155,7 @@ class NetworkPoissonCNN(torch.nn.Module):
         x = self.slayer.spike(self.slayer.psp(self.pool(x)))
         x = self.slayer.spike(self.slayer.psp(self.conv2(x)))
         x = self.slayer.spike(self.slayer.psp(self.pool(x)))
+        x = x.reshape(1, 1568,1,1,x.shape[-1])
         x = self.slayer.spike(self.slayer.psp(self.fc1(x)))
         x = self.slayer.spike(self.slayer.psp(self.fc2(x)))
 
