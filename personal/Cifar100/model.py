@@ -53,7 +53,7 @@ class NetworkInterpolationMLP(torch.nn.Module):
 
     def forward(self, input):
         x = replicate(input, netParams['simulation']['tSample'])
-        x.reshape(1, 1, 28, 28, x.shape[-1])
+        x.reshape(1, 3, 32, 32, x.shape[-1])
         x = self.slayer.spike(self.slayer.psp(self.fc1(x)))
         x = self.slayer.spike(self.slayer.psp(self.fc2(x)))
 
