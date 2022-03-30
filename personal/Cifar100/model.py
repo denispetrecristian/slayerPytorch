@@ -49,7 +49,7 @@ class NetworkInterpolationMLP(torch.nn.Module):
         self.slayer = self.slayer = snn.layer(
             netParams['neuron'], netParams['simulation'])
         self.fc1 = self.slayer.dense((32, 32, 3), 410)
-        self.fc2 = self.slayer.dense(410, 10)
+        self.fc2 = self.slayer.dense(410, 100)
 
     def forward(self, input):
         x = replicate(input, netParams['simulation']['tSample'])
@@ -65,7 +65,7 @@ class NetworkRateMLP(torch.nn.Module):
         super(NetworkRateMLP, self).__init__()
         self.slayer = snn.layer(netParams['neuron'], netParams['simulation'])
         self.fc1 = self.slayer.dense((32, 32, 3), 410)
-        self.fc2 = self.slayer.dense(410, 10)
+        self.fc2 = self.slayer.dense(410, 100)
 
     def forward(self, input):
         x = self.slayer.rateEncoding(input)
@@ -80,7 +80,7 @@ class NetworkPoissonMLP(torch.nn.Module):
         super(NetworkPoissonMLP, self).__init__()
         self.slayer = snn.layer(netParams['neuron'], netParams['simulation'])
         self.fc1 = self.slayer.dense((32, 32, 3), 410)
-        self.fc2 = self.slayer.dense(410, 10)
+        self.fc2 = self.slayer.dense(410, 100)
 
     def forward(self, input):
         x = self.slayer.poissonEncoding(input)
@@ -99,7 +99,7 @@ class NetworkInterpolationCNN(torch.nn.Module):
         self.conv2 = self.slayer.conv(6, 16, 5)
         self.fc1 = self.slayer.dense((16*10*10), 300)
         self.fc2 = self.slayer.dense(300, 150)
-        self.fc3 = self.slayer.dense(150, 10)
+        self.fc3 = self.slayer.dense(150, 100)
 
     def forward(self, input):
         x = replicate(input, netParams['simulation']['tSample'])
@@ -124,7 +124,7 @@ class NetworkRateCNN(torch.nn.Module):
         self.conv2 = self.slayer.conv(6, 16, 5)
         self.fc1 = self.slayer.dense((16*10*10), 300)
         self.fc2 = self.slayer.dense(300, 150)
-        self.fc3 = self.slayer.dense(150, 10)
+        self.fc3 = self.slayer.dense(150, 100)
 
     def forward(self, input):
         x = self.slayer.rateEncoding(input)
@@ -149,7 +149,7 @@ class NetworkPoissonCNN(torch.nn.Module):
         self.conv2 = self.slayer.conv(6, 16, 5)
         self.fc1 = self.slayer.dense((16*10*10), 300)
         self.fc2 = self.slayer.dense(300, 150)
-        self.fc3 = self.slayer.dense(150, 10)
+        self.fc3 = self.slayer.dense(150, 100)
 
     def forward(self, input):
         x = self.slayer.poissonEncoding(input)
@@ -231,7 +231,7 @@ def main():
             output = model(sample)
 
             # Create desired spike train
-            desired = torch.zeros((10, 1, 1, 1))
+            desired = torch.zeros((100, 1, 1, 1))
             desired[label, ...] = 1
 
             # Get the loss
