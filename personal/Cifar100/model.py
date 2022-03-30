@@ -252,7 +252,7 @@ def main():
                 snn.predict.getClass(output) == label).data.item()
             stats.training.lossSum += loss.cpu().data.item()
 
-            if i % 100:
+            if i % 100 == 0:
                 stats.print(epoch, i, (datetime.now() - tSt).total_seconds())
 
         # Save the network
@@ -263,7 +263,7 @@ def main():
         for i, (sample, label) in enumerate(loadedTest):
             sample = sample.to(device)
 
-            desired = torch.zeros((10, 1, 1, 1))
+            desired = torch.zeros((100, 1, 1, 1))
             desired[label, ...] = 1
 
             output = model(sample)
@@ -274,7 +274,7 @@ def main():
                 snn.predict.getClass(output) == label).data.item()
             stats.testing.numSamples += len(label)
 
-            if i % 100:
+            if i % 100 == 0:
                 stats.print(epoch, i, (datetime.now() - tSt).total_seconds())
 
 
