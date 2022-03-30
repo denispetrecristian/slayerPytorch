@@ -140,7 +140,7 @@ class NetworkRateCNN(torch.nn.Module):
 
 class NetworkPoissonCNN(torch.nn.Module):
     def __init__(self, netParams):
-        super().__init__(NetworkPoissonCNN, self)
+        super(NetworkPoissonCNN, self).__init__()
         self.slayer = snn.layer(netParams)
         self.conv1 = self.slayer.conv(1, 16, 5, padding=2)
         self.pool = self.slayer.pool((2, 2))
