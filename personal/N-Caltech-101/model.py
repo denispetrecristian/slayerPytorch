@@ -99,6 +99,10 @@ def main():
             if i%10 == 0:   stats.print(epoch, i, (datetime.now() - tSt).total_seconds())
 
 
+        torch.save(network.state_dict(), "network_caltech" + str(epoch))
+        torch.save(optimizer.state_dict(), "optimizer_caltech" + str(epoch))               
+
+
         for i, (input, label, target) in enumerate(loadedTest, 0):
             input  = input.to(device)
             target = target.to(device)
