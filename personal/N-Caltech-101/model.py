@@ -114,6 +114,7 @@ def main():
             if i%10 == 0:   stats.print(epoch, i)
         
         # Update stats.
+        stats.save()
         stats.update()
 
 

@@ -342,6 +342,7 @@ def main():
             if i % 10 == 0:
                 stats.print(epoch, i)
 
+        stats.save()
         stats.update()
         
         # Pytorch does not properly release memory
