@@ -352,7 +352,7 @@ if __name__ == "__main__":
         network.train()
 
         for i, (sample, label) in enumerate(loaded_train):
-            sample.to(device)
+            sample = sample.to(device)
 
             desired = torch.zeros((10, 1, 1, 1))
             desired[label, ...] = 1
