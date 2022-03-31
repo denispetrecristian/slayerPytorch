@@ -273,6 +273,9 @@ def main():
 
             if i % 100:
                 stats.print(epoch, i, (datetime.now() - tSt).total_seconds())
+        
+        stats.save()
+        stats.update()
 
 
 if __name__ == "__main__":
