@@ -12,6 +12,7 @@ from datetime import datetime
 netParams = snn.params("poissonNetwork.yaml")
 device = torch.device("cuda")
 magnitude = 10
+load = False
 
 transformation = torchvision.transforms.Compose(
     [torchvision.transforms.ToTensor(), lambda x: x / magnitude])
@@ -85,6 +86,10 @@ def main():
     optimizer = torch.optim.Adam(
         network.parameters(), amsgrad=True, lr=1e-3, weight_decay=0.7)
 
+    if load == True:
+        optimizer.load_state_dict(torch.load("optimizer_Cifar10poi1"))
+        network.load_state_dict(torch.load("network_Cifar10poi1"))
+
     criterion = snn.loss(netParams).to(device)
     stats = learningstats.learningStats()
 
@@ -112,6 +117,9 @@ def main():
 
             if i % 10 == 0:
                 stats.print(epoch, i, (datetime.now() - tSt).total_seconds())
+        
+        torch.save(network.state_dict(), "network_Cifar10poi" + str(epoch))
+        torch.save(optimizer.state_dict(), "optimizer_Cifar10poi" + str(epoch))       
 
         for i, (sample, label) in enumerate(loaded_test):
             sample = sample.to(device)

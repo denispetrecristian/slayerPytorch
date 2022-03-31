@@ -13,6 +13,7 @@ transformation = torchvision.transforms.Compose(
 
 netParams = snn.params("interpolateNetwork.yaml")
 device = torch.device("cuda")
+load = False
 
 
 def replicate(input, num_steps):
@@ -92,6 +93,10 @@ def main():
     network = Network(netParams).to(device)
     optimizer = torch.optim.Adam(
         network.parameters(), amsgrad=True, lr=1e-3, weight_decay=0.7)
+    
+    if load == True:
+        optimizer.load_state_dict(torch.load("optimizer_Cifar10int1"))
+        network.load_state_dict(torch.load("network_Cifar10int1"))
 
     criterion = snn.loss(netParams).to(device)
     stats = learningstats.learningStats()
@@ -120,6 +125,9 @@ def main():
 
             if i % 10 == 0:
                 stats.print(epoch, i, (datetime.now() - tSt).total_seconds())
+
+        torch.save(network.state_dict(), "network_Cifar10int" + str(epoch))
+        torch.save(optimizer.state_dict(), "optimizer_Cifar10int" + str(epoch))   
 
         for i, (sample, label) in enumerate(loaded_test):
             sample = sample.to(device)
