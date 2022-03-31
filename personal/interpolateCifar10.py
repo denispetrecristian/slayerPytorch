@@ -60,9 +60,9 @@ class Network(torch.nn.Module):
     def __init__(self, netParams):
         super(Network, self).__init__()
         self.slayer = snn.layer(netParams['neuron'], netParams['simulation'])
-        self.fc1 = self.slayer.dense((32*32 * 3), 800)
-        self.fc2 = self.slayer.dense(800, 256)
-        self.fc3 = self.slayer.dense(256,10)
+        self.fc1 = self.slayer.dense((32*32 * 3), 410)
+        self.fc2 = self.slayer.dense(410, 10)
+        # self.fc3 = self.slayer.dense(256,10)
 
         self.nTimeBins = int(
             netParams['simulation']['tSample'] / netParams['simulation']['Ts'])
@@ -73,7 +73,7 @@ class Network(torch.nn.Module):
         x = x.reshape(1, -1, 1, 1, x.shape[-1])
         x = self.slayer.spike(self.slayer.psp(self.fc1(x)))
         x = self.slayer.spike(self.slayer.psp(self.fc2(x)))
-        x = self.slayer.spike(self.slayer.psp(self.fc3(x)))
+        # x = self.slayer.spike(self.slayer.psp(self.fc3(x)))
 
         return x
 
@@ -139,6 +139,8 @@ def main():
                 stats.print(epoch, i, (datetime.now() - tSt).total_seconds())
 
         stats.update()
+        fileName = "interpolationCifar10" + str(epoch)
+        stats.save(filename= fileName)
 
 
 if __name__ == "__main__":

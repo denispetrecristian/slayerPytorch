@@ -439,3 +439,5 @@ if __name__ == "__main__":
                 stats.print(epoch, i)
 
         stats.update()
+        fileName = "rateCifar10" + str(epoch)
+        stats.save(filename= fileName)

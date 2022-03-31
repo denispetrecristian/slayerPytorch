@@ -131,6 +131,8 @@ def main():
                 stats.print(epoch, i, (datetime.now() - tSt).total_seconds())
 
         stats.update()
+        fileName = "poissonCifar10" + str(epoch)
+        stats.save(filename= fileName)
 
 
 if __name__ == "__main__":
