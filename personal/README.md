@@ -85,3 +85,21 @@ of command line flags
 e.g. `python model.py -e poisson -m CNN` This runs the convolutional SNN with the poisson
 encoding. The other 2 values for the `-e` flag are rate and interpolation. To run the MLP
 you would have to use `-m MLP`.
+
+
+# REQUIREMENTS #
+
+This has been tested using:
+
+The first version is being used on my local machine while the second one on the google colab instance.
+Everything using interpolation performs better, in terms of accurcy, on my local machine. This is caused
+by the pytorch version.
+
+* torch 1.9.1 and 1.10.0
+* torchvision 0.11.1 and
+* numpy 1.21.5 and 1.20.2
+* h5py 3.2.1 and 3.1.0
+* matplotlib 3.2.2
+* pickleshare 0.7.5
+* nvcc 11.1
+* CUDA VERSION: 11.4 and 11.2
