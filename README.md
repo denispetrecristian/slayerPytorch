@@ -1,3 +1,21 @@
+# IMAGE CLASSIFICATION USING BRAIN-LIKE LEARNING VIA NEURAL NETWORKS #
+To find the models presented in the report go to
+
+`cd personal/`
+
+You can also find the changes to the library presented in the paper by 
+following commits in
+
+`cd src/`
+
+Changes have been made in the cuda directory where encodingKernels.h
+is a header file with kernels used to encode non-neuromorphic datasets
+in neuromorphic ones.
+
+To install the library find the steps described below by the authors
+of the original Slayer paper
+
+
 # README #
 This package is a PyTorch port of the original **S**pike **LAY**er **E**rror **R**eassignment (**SLAYER**) framework for backpropagation based spiking neural networks (SNNs) learning.
 The original implementation is in C++ with CUDA and CUDNN. 
