@@ -116,7 +116,7 @@ class NetworkInterpolationCNN(torch.nn.Module):
 
 class NetworkRateCNN(torch.nn.Module):
     def __init__(self, netParams):
-        super().__init__(NetworkRateCNN, self)
+        super(NetworkRateCNN, self).__init__()
         self.slayer = snn.layer(netParams['neuron'], netParams['simulation'])
         self.conv1 = self.slayer.conv(1, 16, 5, padding=2)
         self.pool = self.slayer.pool((2, 2))
