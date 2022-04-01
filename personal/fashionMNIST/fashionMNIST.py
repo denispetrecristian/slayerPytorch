@@ -254,7 +254,7 @@ def main():
 
         # Save the network
         torch.save(model.state_dict(), "netowork" + str(epoch))
-        torch.save(model.state_dict(), "optimizer" + str(epoch))
+        torch.save(optimizer.state_dict(), "optimizer" + str(epoch))
 
         # Testing loop
         for i, (sample, label) in enumerate(loadedTest):
@@ -270,6 +270,8 @@ def main():
             stats.testing.correctSamples += torch.sum(
                 snn.predict.getClass(output) == label).data.item()
             stats.testing.numSamples += len(label)
+
+            stats.testing.lossSum += loss.cpu().data.item()
 
             if i % 100:
                 stats.print(epoch, i, (datetime.now() - tSt).total_seconds())
